@@ -14,12 +14,14 @@
         [data-theme="cute"] { --bg-color: #fff0f5; --header-bg: rgba(255, 182, 193, 0.95); --accent-color: #ff69b4; --text-color: #5d4037; --app-font: 'M PLUS Rounded 1c', sans-serif; --card-bg: rgba(255, 255, 255, 0.8); }
         [data-theme="glass"] { --bg-color: #e8f4f8; --header-bg: rgba(255, 255, 255, 0.4); --accent-color: #40c0cb; --text-color: #2c5263; --app-font: 'Noto Sans JP', sans-serif; --card-bg: rgba(255, 255, 255, 0.5); }
 
-        body { font-family: var(--app-font); margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); transition: background-color 0.3s; }
+        /* overscroll-behavior: none でiPhoneの引っ張り更新を禁止 */
+        body { font-family: var(--app-font); margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); transition: background-color 0.3s; overscroll-behavior: none; touch-action: none; }
+        
         .glass-card { background: var(--card-bg); backdrop-filter: blur(28px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; }
         [data-theme="dark"] .glass-card { border: 1px solid rgba(255, 255, 255, 0.05); }
         button { font-family: inherit; cursor: pointer; border: none; border-radius: 14px; transition: transform 0.2s, background-color 0.2s; touch-action: manipulation; }
         button:active { transform: scale(0.92); }
-        input, select, textarea { font-family: inherit; box-sizing: border-box; outline: none; }
+        input, select, textarea { font-family: inherit; box-sizing: border-box; outline: none; touch-action: manipulation; }
 
         /* ヘッダー・タブ */
         .header-area { flex-shrink: 0; z-index: 1000; position: relative; background: var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); backdrop-filter: blur(15px); }
@@ -37,29 +39,38 @@
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
 
         /* --- 無限キャンバス & ツリー 共通 --- */
-        .workspace-container { flex-grow: 1; overflow: hidden; position: relative; background-image: radial-gradient(rgba(128,128,128,0.2) 1px, transparent 1px); background-size: 20px 20px; cursor: grab; }
+        /* touch-action: none でブラウザのスクロールやピンチを無効化し、JSで制御する */
+        .workspace-container { flex-grow: 1; overflow: hidden; position: relative; background-image: radial-gradient(rgba(128,128,128,0.2) 1px, transparent 1px); background-size: 20px 20px; cursor: grab; touch-action: none; overscroll-behavior: none; }
         .workspace-container:active { cursor: grabbing; }
         .workspace-layer { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: 10000px; height: 10000px; }
         
-        .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 100px; max-width: 300px; cursor: move; user-select: none; transition: box-shadow 0.2s; z-index: 10; display: flex; flex-direction: column; gap: 5px; backdrop-filter: blur(10px); }
+        /* オンラインインジケーター（左上透かし） */
+        .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.65; pointer-events: none; transition: opacity 0.3s; }
+        .online-indicator:hover { opacity: 1; pointer-events: auto; }
+        
+        /* チャットノード */
+        .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 120px; max-width: 300px; user-select: none; transition: box-shadow 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
         
-        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.8; }
+        /* ノードヘッダーをドラッグ専用ハンドルに */
+        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: grab; }
+        .node-header:active { cursor: grabbing; }
         .node-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #ccc; border: 1px solid rgba(0,0,0,0.1); }
+        .node-body { padding: 10px 15px 0 15px; }
         .node-text { line-height: 1.4; word-break: break-word; }
         .node-image { max-width: 100%; border-radius: 12px; margin-top: 5px; pointer-events: none; }
         
-        .node-controls { position: absolute; top: -30px; right: 0; display: none; gap: 5px; background: rgba(0,0,0,0.6); padding: 4px; border-radius: 10px; }
-        .chat-node:hover .node-controls { display: flex; }
-        .node-btn { background: #fff; color: #333; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+        .node-controls { position: absolute; top: -15px; right: -10px; display: none; gap: 5px; background: rgba(0,0,0,0.6); padding: 4px; border-radius: 10px; z-index: 101; }
+        .chat-node:hover .node-controls, .chat-node:active .node-controls { display: flex; }
+        .node-btn { background: #fff; color: #333; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
         .node-btn.del { color: #f44336; }
         
-        .rotate-handle { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; cursor: alias; display: none; align-items: center; justify-content: center; color: white; font-size: 10px; }
-        .chat-node:hover .rotate-handle { display: flex; }
+        .rotate-handle { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; background: var(--accent-color); border-radius: 50%; cursor: alias; display: none; align-items: center; justify-content: center; color: white; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .chat-node:hover .rotate-handle, .chat-node:active .rotate-handle { display: flex; }
 
         /* ツリー描画用 SVGレイヤー */
-        #tree-svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        #tree-svg-layer { position: absolute; top: 0; left: 0; width: 10000px; height: 10000px; pointer-events: none; z-index: 1; }
         .tree-line { stroke: var(--accent-color); stroke-width: 3; fill: none; opacity: 0.5; stroke-dasharray: 6, 6; }
 
         /* 入力バー */
@@ -71,28 +82,16 @@
 
         /* --- モーダル・ポップアップ --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center; padding: 15px; }
-        .modal-content { background: #fff; color: #333; width: 100%; max-width: 360px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .modal-content { background: #fff; color: #333; width: 100%; max-width: 360px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; max-height: 85vh; overflow-y: auto; }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
         
         .contact-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); }
 
-        /* アイコントリミングエディタ */
-        .crop-container { width: 100%; height: 250px; background: #eee; position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 10px; touch-action: none; }
-        .crop-image { position: absolute; transform-origin: 0 0; }
-        .crop-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); pointer-events: none; border: 2px dashed rgba(255,255,255,0.8); border-radius: 50%; box-sizing: border-box; }
-
-        /* ファイル進捗 パタパタアニメーション */
-        .file-progress-container { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 12px; margin-top: 5px; }
-        .flip-text { display: inline-block; font-family: 'DotGothic16', monospace; font-size: 1.2rem; font-weight: bold; color: var(--accent-color); min-width: 45px; text-align: right; }
-        @keyframes flipIt { 0% { transform: rotateX(90deg); opacity: 0; } 100% { transform: rotateX(0deg); opacity: 1; } }
-        .flip-anim { animation: flipIt 0.15s ease-out; }
-
-        /* 設定画面 */
+        /* 設定・その他 */
         .settings-container { overflow-y: auto; padding: 15px; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-size: 0.9rem; font-weight: bold; opacity: 0.8; margin-bottom: 6px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid rgba(128,128,128,0.3); border-radius: 12px; font-size: 1rem; }
-
     </style>
 </head>
 <body data-theme="default">
@@ -115,28 +114,31 @@
 </div>
 
 <div id="tab-canvas" class="tab-content active">
+    <div class="online-indicator" id="online-indicator-canvas">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 オンライン</div>
+        <div id="online-list-canvas" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
+    </div>
+
     <div class="workspace-container" id="canvas-workspace">
         <div class="workspace-layer" id="canvas-layer"></div>
     </div>
     
-    <div class="chat-preview-area" id="input-preview-area" style="display:none; padding:8px; background:var(--card-bg); border-top:1px solid rgba(128,128,128,0.2);">
-        <div class="preview-item" style="display:inline-block; position:relative; background:#fff; padding:4px; border-radius:8px;">
-            <div id="input-preview-content" style="font-size:0.8rem; font-weight:bold;"></div>
-            <button onclick="removeAttachedFile()" style="position:absolute; top:-8px; right:-8px; background:#f44336; color:#fff; width:22px; height:22px; border-radius:50%; border:none;">✖</button>
-        </div>
-    </div>
-
     <div class="chat-controls-bar">
-        <input type="file" id="file-input" style="display:none;" onchange="handleFileSelect(this)">
-        <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
-        <textarea id="chat-input-text" class="chat-input" placeholder="メッセージ (Shift+Enterで改行)" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, sendMessage)"></textarea>
-        <button class="chat-action-btn" onclick="sendMessage()">
+        <input type="file" id="file-input-canvas" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input-canvas').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
+        <textarea id="chat-input-text" class="chat-input" placeholder="メッセージ (Shift+Enterで改行)" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('canvas'))"></textarea>
+        <button class="chat-action-btn" onclick="sendMessage('canvas')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
     </div>
 </div>
 
 <div id="tab-tree" class="tab-content">
+    <div class="online-indicator" id="online-indicator-tree">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 オンライン</div>
+        <div id="online-list-tree" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
+    </div>
+
     <div class="workspace-container" id="tree-workspace">
         <div class="workspace-layer" id="tree-layer">
             <svg id="tree-svg-layer"></svg>
@@ -149,9 +151,10 @@
     </div>
     
     <div class="chat-controls-bar">
-        <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
-        <textarea id="tree-input-text" class="chat-input" placeholder="ツリーへ投稿..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, sendTreeMessage)"></textarea>
-        <button class="chat-action-btn" onclick="sendTreeMessage()">
+        <input type="file" id="file-input-tree" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
+        <textarea id="tree-input-text" class="chat-input" placeholder="ツリーへ投稿..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
+        <button class="chat-action-btn" onclick="sendMessage('tree')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
     </div>
@@ -159,7 +162,6 @@
 
 <div id="tab-settings" class="tab-content">
     <div class="settings-container">
-        
         <div class="glass-card" style="padding: 15px; margin-bottom: 15px;">
             <h3 style="margin-top:0; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:5px;">👤 プロフィール</h3>
             <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
@@ -207,7 +209,7 @@
         </div>
 
         <div style="display:flex; gap:8px; margin-bottom:20px;">
-            <input type="text" id="p2p-target-id" placeholder="相手のID(4桁)" style="width:100px; padding:12px 5px; border-radius:10px; border:2px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1.1rem; text-align:center;" inputmode="numeric" maxlength="4">
+            <input type="text" id="p2p-target-id" placeholder="相手ID" style="width:90px; padding:12px 5px; border-radius:10px; border:2px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1.1rem; text-align:center;" inputmode="numeric" maxlength="4">
             <button onclick="connectNewContact()" style="flex:1; background:var(--accent-color); color:white; font-weight:900; border-radius:10px;">新しく繋ぐ</button>
         </div>
 
@@ -218,23 +220,14 @@
     </div>
 </div>
 
-<div id="crop-modal" class="modal-overlay" style="z-index: 3000;">
-    <div class="modal-content">
-        <h3 style="margin-top:0; text-align:center;">アイコンを調整</h3>
-        <div class="crop-container" id="crop-container">
-            <img id="crop-target-img" class="crop-image">
-            <div class="crop-mask"></div>
-        </div>
-        <div style="display:flex; justify-content:center; gap: 10px; margin-bottom: 15px;">
-            <button onclick="zoomCrop(0.1)" style="flex:1; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); color:#333;">➕ 拡大</button>
-            <button onclick="zoomCrop(-0.1)" style="flex:1; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); color:#333;">➖ 縮小</button>
-        </div>
+<div id="file-preview-modal" class="modal-overlay" style="z-index: 3000;">
+    <div class="modal-content" style="text-align:center;">
+        <h3 style="margin-top:0;">添付ファイル確認</h3>
+        <div id="file-preview-content" style="margin: 15px 0; max-height: 200px; overflow: hidden; border-radius: 8px;"></div>
         <div style="display:flex; gap:10px;">
-            <input type="file" id="icon-upload-input" accept="image/*" style="display:none;" onchange="handleIconUpload(this)">
-            <button onclick="document.getElementById('icon-upload-input').click()" style="flex:1; padding:12px; background:rgba(0,0,0,0.1); color:#333; border-radius:10px; font-weight:bold; font-size:0.9rem;">写真を選ぶ</button>
-            <button onclick="commitCrop()" style="flex:1; padding:12px; background:var(--accent-color); color:white; border-radius:10px; font-weight:bold;">決定</button>
+            <button onclick="removeAttachedFile()" style="flex:1; padding:12px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold;">削除</button>
+            <button onclick="document.getElementById('file-preview-modal').style.display='none'" style="flex:1; padding:12px; background:var(--accent-color); color:white; border-radius:10px; font-weight:bold;">OK</button>
         </div>
-        <button onclick="document.getElementById('crop-modal').style.display='none'" style="width:100%; padding:10px; background:transparent; color:#888; margin-top:10px; font-weight:bold;">キャンセル</button>
     </div>
 </div>
 
@@ -244,25 +237,25 @@
     // ==========================================
     let appData = { 
         theme: 'default', userName: 'ゲスト', userIcon: '', openAiKey: '',
-        myP2pId: '', 
-        contacts: {}, // { "1234": { name: "相手", icon: "", canvasNodes: [], treeNodes: [] } }
+        myP2pId: '', contacts: {}, 
     };
     
-    let activeContactId = null;
+    // 複数のバックグラウンド接続を保持
+    let activeConnections = {}; // { "1234": connObj }
+    let activeContactId = null; // 現在画面に表示している相手
+    
     let currentAttachedFile = null; 
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB制限
 
-    // ワークスペース状態
+    // ワークスペース状態 (再接続しても位置を保持するためリセットしない)
     const viewStates = {
         canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
         tree:   { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
     };
-    let activeNodeDrag = null; let activeRotateHandle = null;
 
     function loadData() {
-        const backup = localStorage.getItem('node_canvas_chat_v1');
+        const backup = localStorage.getItem('node_canvas_chat_v2');
         if (backup) { try { appData = { ...appData, ...JSON.parse(backup) }; } catch(e) {} }
-        
         if (!appData.myP2pId) { appData.myP2pId = Math.floor(1000 + Math.random() * 9000).toString(); saveData(); }
 
         applyTheme();
@@ -274,7 +267,6 @@
         initP2P();
         initWorkspaces();
         
-        // 最初のタブ初期化
         const activeTab = document.querySelector('.tab.active');
         if(activeTab) {
             document.getElementById('tab-highlight').style.width = activeTab.offsetWidth + 'px';
@@ -282,11 +274,11 @@
         }
     }
     
-    function saveData() { localStorage.setItem('node_canvas_chat_v1', JSON.stringify(appData)); }
+    function saveData() { localStorage.setItem('node_canvas_chat_v2', JSON.stringify(appData)); }
     window.onload = loadData;
 
     // ==========================================
-    // 🎨 UI操作・テーマ・タブ切替
+    // 🎨 タブ切替・UI操作
     // ==========================================
     let currentTab = 'canvas';
     
@@ -297,7 +289,6 @@
         tabElement.classList.add('active');
         document.getElementById(id).classList.add('active');
         
-        // テキスト幅が変わる可能性があるので少し遅延させてハイライトを追従
         setTimeout(() => {
             const highlight = document.getElementById('tab-highlight');
             highlight.style.width = tabElement.offsetWidth + 'px';
@@ -308,104 +299,59 @@
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
     }
 
-    // キャンバスタブ（接続ボタン兼用）のクリック処理
     function handleCanvasTabClick(tabEl) {
-        const isConnected = conn && conn.open;
-        // すでに接続中 ＆ 現在キャンバスタブを見ている場合 → 切断確認
-        if (isConnected && tabEl.classList.contains('active')) {
-            if(confirm("通信を切断しますか？")) { disconnectP2P(false); }
+        // 現在キャンバスを開いていて、なおかつ誰か(activeContactId)と会話状態の場合
+        if (tabEl.classList.contains('active') && activeContactId) {
+            if(confirm("現在のトーク画面を閉じますか？\n（バックグラウンド接続は維持されます）")) {
+                activeContactId = null;
+                updateTabUI();
+                renderWorkspace(currentTab); // 画面クリア
+            }
             return;
         }
         
         switchTab('tab-canvas', tabEl);
         
-        // 未接続ならポップアップを開く
-        if (!isConnected) {
+        if (!activeContactId) {
             openConnectModal();
         }
     }
 
     function applyTheme() { document.body.setAttribute('data-theme', appData.theme); }
-    function hardResetApp() { if(confirm("【⚠️警告】全履歴を消去します。よろしいですか？")) { localStorage.removeItem('node_canvas_chat_v1'); location.reload(); } }
+    function hardResetApp() { if(confirm("【⚠️警告】全履歴を消去します。よろしいですか？")) { localStorage.removeItem('node_canvas_chat_v2'); location.reload(); } }
     
     function autoResize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight < 120 ? el.scrollHeight : 120) + 'px'; }
     function handleEnter(e, sendFunc) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFunc(); e.target.style.height = 'auto'; } }
 
-    // ==========================================
-    // 🖼️ アイコントリミング (Canvas Crop)
-    // ==========================================
-    let cropImg = new Image();
-    let cropState = { scale: 1, panX: 0, panY: 0, isDragging: false, startX: 0, startY: 0 };
-    
-    function openCropModal() { document.getElementById('crop-modal').style.display = 'flex'; }
-    
-    function handleIconUpload(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            cropImg.onload = () => {
-                const imgEl = document.getElementById('crop-target-img');
-                imgEl.src = cropImg.src;
-                const container = document.getElementById('crop-container');
-                cropState.scale = Math.max(container.offsetWidth / cropImg.width, container.offsetHeight / cropImg.height);
-                cropState.panX = (container.offsetWidth - cropImg.width * cropState.scale) / 2;
-                cropState.panY = (container.offsetHeight - cropImg.height * cropState.scale) / 2;
-                updateCropTransform();
-            };
-            cropImg.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function updateCropTransform() {
-        const imgEl = document.getElementById('crop-target-img');
-        imgEl.style.transform = `translate(${cropState.panX}px, ${cropState.panY}px) scale(${cropState.scale})`;
-    }
-    
-    function zoomCrop(delta) {
-        cropState.scale += delta;
-        if(cropState.scale < 0.1) cropState.scale = 0.1;
-        updateCropTransform();
-    }
-
-    const cropCont = document.getElementById('crop-container');
-    cropCont.onpointerdown = (e) => { cropState.isDragging = true; cropState.startX = e.clientX - cropState.panX; cropState.startY = e.clientY - cropState.panY; cropCont.setPointerCapture(e.pointerId); };
-    cropCont.onpointermove = (e) => { if(cropState.isDragging){ cropState.panX = e.clientX - cropState.startX; cropState.panY = e.clientY - cropState.startY; updateCropTransform(); } };
-    cropCont.onpointerup = (e) => { cropState.isDragging = false; cropCont.releasePointerCapture(e.pointerId); };
-    cropCont.onwheel = (e) => { e.preventDefault(); zoomCrop(e.deltaY > 0 ? -0.1 : 0.1); };
-
-    function commitCrop() {
-        if(!cropImg.src) return document.getElementById('crop-modal').style.display='none';
-        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-        const size = 200; canvas.width = size; canvas.height = size;
-        const cont = document.getElementById('crop-container');
-        
-        const cx = cont.offsetWidth/2; const cy = cont.offsetHeight/2;
-        const drawX = cropState.panX - cx + size/2;
-        const drawY = cropState.panY - cy + size/2;
-        
-        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,size,size);
-        ctx.drawImage(cropImg, 0, 0, cropImg.width, cropImg.height, drawX, drawY, cropImg.width * cropState.scale, cropImg.height * cropState.scale);
-        
-        appData.userIcon = canvas.toDataURL('image/jpeg', 0.8);
-        document.getElementById('profile-icon-preview').src = appData.userIcon;
-        saveData();
-        document.getElementById('crop-modal').style.display = 'none';
-        
-        if (conn && conn.open) { conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } }); }
+    function updateTabUI() {
+        const tabBtn = document.getElementById('tab-btn-canvas');
+        if(activeContactId && appData.contacts[activeContactId]) {
+            tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[activeContactId].name})`; 
+            tabBtn.classList.add('connected');
+        } else {
+            tabBtn.innerHTML = "🎨 キャンバス"; 
+            tabBtn.classList.remove('connected');
+        }
+        setTimeout(() => {
+            if(tabBtn.classList.contains('active')) {
+                const highlight = document.getElementById('tab-highlight');
+                highlight.style.width = tabBtn.offsetWidth + 'px';
+            }
+        }, 50);
     }
 
     // ==========================================
-    // 📡 ワイヤレス チャット (P2P)
+    // 📡 ワイヤレス チャット (P2P 多重接続対応)
     // ==========================================
-    let peer = null; let conn = null;
+    let peer = null;
 
     function initP2P() {
-        peer = new Peer("ncchat-" + appData.myP2pId, { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } });
+        peer = new Peer("ncchat2-" + appData.myP2pId, { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } });
+        
+        // 相手から繋いできた場合の処理（バックグラウンドで受け入れる）
         peer.on('connection', (connection) => {
-            conn = connection;
-            const targetId = conn.peer.replace("ncchat-", "");
-            setupP2PConnection(targetId);
+            const targetId = connection.peer.replace("ncchat2-", "");
+            setupP2PConnection(targetId, connection, false);
         });
     }
 
@@ -420,13 +366,20 @@
         const list = document.getElementById('contacts-list'); list.innerHTML = '';
         Object.keys(appData.contacts).forEach(id => {
             const contact = appData.contacts[id];
+            const isOnline = activeConnections[id] && activeConnections[id].open;
             list.innerHTML += `
             <div class="contact-item">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <img src="${contact.icon || ''}" style="width:36px; height:36px; border-radius:50%; background:#ccc; object-fit:cover;">
-                    <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> <div style="font-size:0.7rem; opacity:0.6;">ID: ${id}</div></div>
+                    <div>
+                        <strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> 
+                        ${isOnline ? '<span style="color:#4CAF50; font-size:0.7rem; font-weight:bold;">(オンライン)</span>' : ''}
+                        <div style="font-size:0.7rem; opacity:0.6;">ID: ${id}</div>
+                    </div>
                 </div>
-                <button onclick="connectToId('${id}')" style="padding:6px 12px; background:#4CAF50; color:white; font-weight:bold; border-radius:10px;">繋ぐ</button>
+                <button onclick="connectToId('${id}')" style="padding:6px 12px; background:${isOnline ? '#2196F3' : '#4CAF50'}; color:white; font-weight:bold; border-radius:10px;">
+                    ${isOnline ? '画面を開く' : '繋ぐ'}
+                </button>
             </div>`;
         });
     }
@@ -440,53 +393,65 @@
 
     function connectToId(targetId) {
         closeConnectModal();
+        activeContactId = targetId; // 画面を切り替え
+        
+        if (activeConnections[targetId] && activeConnections[targetId].open) {
+            // 既にバックグラウンドで繋がっているならそのまま画面を描画
+            updateTabUI();
+            renderWorkspace(currentTab);
+            return;
+        }
+
         const tabBtn = document.getElementById('tab-btn-canvas');
         tabBtn.innerHTML = "通信中..."; 
-        conn = peer.connect("ncchat-" + targetId, { reliable: true });
-        setupP2PConnection(targetId);
-        setTimeout(() => { if(conn && !conn.open) { disconnectP2P(); alert("接続タイムアウト。"); } }, 8000);
+        const conn = peer.connect("ncchat2-" + targetId, { reliable: true });
+        setupP2PConnection(targetId, conn, true);
+        
+        setTimeout(() => { 
+            if(conn && !conn.open && activeContactId === targetId) { 
+                activeContactId = null; updateTabUI(); alert("接続タイムアウト。"); 
+            } 
+        }, 8000);
     }
 
-    function setupP2PConnection(targetId) {
+    function setupP2PConnection(targetId, conn, isInitiator) {
         conn.on('open', () => {
-            activeContactId = targetId;
+            activeConnections[targetId] = conn;
             if(!appData.contacts[targetId]) { appData.contacts[targetId] = { name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; saveData(); }
             
-            const tabBtn = document.getElementById('tab-btn-canvas');
-            tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[targetId].name})`; 
-            tabBtn.classList.add('connected');
-            
-            // ハイライト幅の再調整
-            setTimeout(() => {
-                if(tabBtn.classList.contains('active')) {
-                    const highlight = document.getElementById('tab-highlight');
-                    highlight.style.width = tabBtn.offsetWidth + 'px';
-                }
-            }, 50);
-
-            renderWorkspace('canvas'); renderWorkspace('tree');
+            updateOnlineIndicator();
             conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
+
+            // 相手から繋いできた ＆ 現在誰も開いていない なら自動で画面を開く
+            if (!isInitiator && !activeContactId) {
+                activeContactId = targetId;
+            }
+
+            // 現在の画面の相手ならUIを更新
+            if (activeContactId === targetId) {
+                updateTabUI();
+                renderWorkspace(currentTab);
+            }
         });
 
         conn.on('data', async (data) => {
             if (data.type === 'system_info') {
-                if(appData.contacts[activeContactId]) {
-                    appData.contacts[activeContactId].name = data.payload.name;
-                    if(data.payload.icon) appData.contacts[activeContactId].icon = data.payload.icon;
-                    
-                    const tabBtn = document.getElementById('tab-btn-canvas');
-                    tabBtn.innerHTML = `🟢 接続中 (${data.payload.name})`;
-                    saveData(); renderWorkspace(currentTab);
+                if(appData.contacts[targetId]) {
+                    appData.contacts[targetId].name = data.payload.name;
+                    if(data.payload.icon) appData.contacts[targetId].icon = data.payload.icon;
+                    saveData();
+                    updateOnlineIndicator();
+                    if(activeContactId === targetId) { updateTabUI(); renderWorkspace(currentTab); }
                 }
             } else if (data.type === 'new_node') {
-                handleReceivedNode(data.payload);
+                handleReceivedNode(targetId, data.payload);
             } else if (data.type === 'update_node') {
-                handleNodeUpdate(data.payload);
+                handleNodeUpdate(targetId, data.payload);
             } else if (data.type === 'delete_node') {
-                handleNodeDelete(data.payload.space, data.payload.id);
+                handleNodeDelete(targetId, data.payload.space, data.payload.id);
             } else if (data.type === 'request_ai_process') {
                 if(appData.openAiKey) {
-                    const aiResult = await processEmotionAI(data.payload.text);
+                    const aiResult = await processEmotionAI(data.payload.text, targetId); // 他人の処理を代行
                     conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: aiResult } });
                 } else {
                     conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: null } });
@@ -496,30 +461,38 @@
             }
         });
 
-        conn.on('close', () => { disconnectP2P(true); });
-        conn.on('error', () => { disconnectP2P(true); });
+        conn.on('close', () => { handleDisconnect(targetId); });
+        conn.on('error', () => { handleDisconnect(targetId); });
     }
 
-    function disconnectP2P(isRemote = false) {
-        if(conn) { conn.close(); conn = null; }
-        activeContactId = null;
+    function handleDisconnect(targetId) {
+        if(activeConnections[targetId]) delete activeConnections[targetId];
+        updateOnlineIndicator();
         
-        const tabBtn = document.getElementById('tab-btn-canvas');
-        tabBtn.innerHTML = "🎨 キャンバス"; 
-        tabBtn.classList.remove('connected');
-        
-        setTimeout(() => {
-            if(tabBtn.classList.contains('active')) {
-                const highlight = document.getElementById('tab-highlight');
-                highlight.style.width = tabBtn.offsetWidth + 'px';
-            }
-        }, 50);
-
-        renderWorkspace(currentTab); 
-        // 相手にポップアップは出さず、そっと元に戻る
+        if(activeContactId === targetId) {
+            activeContactId = null;
+            updateTabUI();
+            renderWorkspace(currentTab);
+            // alert("相手との通信が切断されました。"); // 邪魔にならないようにコメントアウト
+        }
     }
 
-    // --- ファイル進捗アニメーション ---
+    function updateOnlineIndicator() {
+        const listHtml = Object.keys(activeConnections)
+            .filter(id => activeConnections[id].open)
+            .map(id => {
+                const name = appData.contacts[id]?.name || id;
+                return `<div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
+                            <span style="color:#4CAF50; font-size:14px;">●</span> ${name}
+                        </div>`;
+            }).join('');
+        
+        const finalHtml = listHtml || '<div style="opacity:0.6;">(誰もいません)</div>';
+        document.getElementById('online-list-canvas').innerHTML = finalHtml;
+        document.getElementById('online-list-tree').innerHTML = finalHtml;
+    }
+
+    // --- ファイル添付 ---
     function handleFileSelect(input) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
@@ -530,112 +503,104 @@
         
         reader.onload = (e) => {
             currentAttachedFile = { dataBase64: e.target.result, name: file.name, isImage: isImage };
-            document.getElementById('input-preview-content').innerHTML = isImage ? `<img src="${e.target.result}" style="max-height:50px;border-radius:4px;">` : `📎 ${file.name}`;
-            document.getElementById('input-preview-area').style.display = 'block';
+            document.getElementById('file-preview-content').innerHTML = isImage ? `<img src="${e.target.result}" style="max-height:150px; border-radius:8px;">` : `<div style="padding:20px; font-weight:bold;">📎 ${file.name}</div>`;
+            document.getElementById('file-preview-modal').style.display = 'flex';
         };
         reader.readAsDataURL(file);
     }
-    function removeAttachedFile() { currentAttachedFile = null; document.getElementById('input-preview-area').style.display = 'none'; document.getElementById('file-input').value = ""; }
-
-    function createProgressHTML(id) {
-        return `<div class="file-progress-container" id="prog-${id}">
-            <div class="loading-spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
-            <div style="font-size:0.8rem; font-weight:bold;">送信中...</div>
-            <div class="flip-text"><span id="flip-${id}">0</span>%</div>
-        </div>`;
-    }
-    function animateProgress(id, callback) {
-        const el = document.getElementById(`flip-${id}`);
-        if(!el) { if(callback) callback(); return; }
-        let pct = 0;
-        const interval = setInterval(() => {
-            pct += Math.floor(Math.random() * 15) + 5;
-            if(pct >= 100) { pct = 100; clearInterval(interval); setTimeout(callback, 200); }
-            el.innerText = pct;
-            el.parentElement.classList.remove('flip-anim');
-            void el.parentElement.offsetWidth; 
-            el.parentElement.classList.add('flip-anim');
-        }, 150);
+    function removeAttachedFile() { 
+        currentAttachedFile = null; 
+        document.getElementById('file-preview-modal').style.display = 'none'; 
+        document.getElementById('file-input-canvas').value = ""; 
+        document.getElementById('file-input-tree').value = ""; 
     }
 
-
     // ==========================================
-    // 🧠 GPT-5.2 エモーショナル・タイポグラフィ
-    // ==========================================
-    async function processEmotionAI(text) {
-        if (!text) return null;
-        
-        if (!appData.openAiKey) {
-            if(!conn || !conn.open) return null; 
-            const reqId = Date.now().toString();
-            return new Promise(resolve => {
-                const handler = (e) => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(e.detail); };
-                window.addEventListener(`ai_result_${reqId}`, handler);
-                conn.send({ type: 'request_ai_process', payload: { reqId, text } });
-                setTimeout(() => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(null); }, 5000);
-            });
-        }
-
-        try {
-            const prompt = `以下のテキストの感情と声の大きさを判定しJSONで返せ。
-フォーマット: {"fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16|Yusei Magic|M PLUS Rounded 1c|Shippori Mincho]", "scale": [0.8から3.0の数値], "color": "[HEXカラーコード]", "rotation": [-10から10の数値(怒り等の場合のみ、平常は0)]}
-テキスト: "${text}"`;
-
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
-                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appData.openAiKey}` },
-                body: JSON.stringify({ model: "gpt-4o", messages: [{role: "system", content: "You output strictly valid JSON."}, {role: "user", content: prompt}], response_format: { type: "json_object" } }) 
-            });
-            const data = await response.json();
-            if(data.error) throw new Error(data.error.message);
-            return JSON.parse(data.choices[0].message.content);
-        } catch(e) { console.error("AI Emotion Error:", e); return null; }
-    }
-
-
-    // ==========================================
-    // 🌌 無限ワークスペース (Pan & Zoom & Drag)
+    // 🌌 iPhone対応: ピンチズーム＆ドラッグ (マルチタッチ)
     // ==========================================
     function initWorkspaces() {
         ['canvas', 'tree'].forEach(space => {
             const cont = document.getElementById(`${space}-workspace`);
+            let evCache = [];
+            let prevDiff = -1;
+
             cont.onpointerdown = (e) => {
+                // ノードや操作ハンドルを触っている場合はワークスペースを動かさない
                 if (e.target.closest('.chat-node') || e.target.closest('.rotate-handle')) return;
-                viewStates[space].isDragging = true;
-                viewStates[space].startX = e.clientX - viewStates[space].panX;
-                viewStates[space].startY = e.clientY - viewStates[space].panY;
+                
+                evCache.push(e);
                 cont.setPointerCapture(e.pointerId);
+
+                // 指1本の場合はパンドラッグ開始
+                if(evCache.length === 1) {
+                    viewStates[space].isDragging = true;
+                    viewStates[space].startX = e.clientX - viewStates[space].panX;
+                    viewStates[space].startY = e.clientY - viewStates[space].panY;
+                }
             };
+
             cont.onpointermove = (e) => {
-                if(viewStates[space].isDragging) {
+                const index = evCache.findIndex(ev => ev.pointerId === e.pointerId);
+                if(index !== -1) evCache[index] = e;
+
+                // 指2本の場合はピンチズーム
+                if (evCache.length === 2) {
+                    const curDiff = Math.hypot(evCache[0].clientX - evCache[1].clientX, evCache[0].clientY - evCache[1].clientY);
+                    if (prevDiff > 0) {
+                        const delta = (curDiff - prevDiff) * 0.005; // ズーム感度
+                        const cx = (evCache[0].clientX + evCache[1].clientX) / 2;
+                        const cy = (evCache[0].clientY + evCache[1].clientY) / 2;
+                        zoomWorkspace(delta, space, cx, cy);
+                    }
+                    prevDiff = curDiff;
+                } 
+                // 指1本の場合はパンドラッグ
+                else if (evCache.length === 1 && viewStates[space].isDragging) {
                     viewStates[space].panX = e.clientX - viewStates[space].startX;
                     viewStates[space].panY = e.clientY - viewStates[space].startY;
                     updateWorkspaceTransform(space);
                 }
+                
+                // ノード移動処理
                 handleNodePointerMove(e, space);
             };
-            cont.onpointerup = (e) => {
-                viewStates[space].isDragging = false;
+
+            const pointerUpHandler = (e) => {
+                evCache = evCache.filter(ev => ev.pointerId !== e.pointerId);
+                if(evCache.length < 2) prevDiff = -1;
+                if(evCache.length === 0) viewStates[space].isDragging = false;
                 cont.releasePointerCapture(e.pointerId);
                 handleNodePointerUp(e, space);
             };
+
+            cont.onpointerup = pointerUpHandler;
+            cont.onpointercancel = pointerUpHandler;
+
+            // PC用マウスホイール
             cont.onwheel = (e) => {
                 e.preventDefault();
-                zoomWorkspace(e.deltaY > 0 ? -0.1 : 0.1, space);
+                zoomWorkspace(e.deltaY > 0 ? -0.1 : 0.1, space, e.clientX, e.clientY);
             };
         });
     }
 
-    function zoomWorkspace(delta, forceSpace = null) {
+    // pivotX/Y を指定して、指の中心でズームできるようにする
+    function zoomWorkspace(delta, forceSpace = null, pivotX = null, pivotY = null) {
         const space = forceSpace || currentTab;
         if(space !== 'canvas' && space !== 'tree') return;
+        
         const vs = viewStates[space];
         const oldScale = vs.scale;
-        vs.scale = Math.max(0.2, Math.min(3, vs.scale + delta));
+        vs.scale = Math.max(0.15, Math.min(4, vs.scale + delta));
         
         const cont = document.getElementById(`${space}-workspace`);
-        const cx = cont.offsetWidth / 2; const cy = cont.offsetHeight / 2;
-        vs.panX = cx - (cx - vs.panX) * (vs.scale / oldScale);
-        vs.panY = cy - (cy - vs.panY) * (vs.scale / oldScale);
+        const rect = cont.getBoundingClientRect();
+        const px = pivotX !== null ? pivotX - rect.left : cont.offsetWidth / 2;
+        const py = pivotY !== null ? pivotY - rect.top : cont.offsetHeight / 2;
+        
+        // 中心座標を維持しながらスケールを適用
+        vs.panX = px - (px - vs.panX) * (vs.scale / oldScale);
+        vs.panY = py - (py - vs.panY) * (vs.scale / oldScale);
         
         updateWorkspaceTransform(space);
     }
@@ -656,9 +621,10 @@
     // ==========================================
     // 🎨 キャンバス / 🌳 ツリー 操作ロジック
     // ==========================================
+    
+    // スマホでのドラッグを安定させるため、.node-header 部分だけを掴めるようにする
     function startNodeDrag(e, id, space) {
-        if(e.target.closest('.node-btn') || e.target.closest('.rotate-handle') || e.target.closest('img') || e.target.closest('a')) return;
-        const nodeObj = getContactData()[`${space}Nodes`].find(n => n.id === id);
+        const nodeObj = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
         if(!nodeObj || !nodeObj.isMine) return; 
         
         activeNodeDrag = { id, space, nodeObj, startX: e.clientX, startY: e.clientY, initX: nodeObj.x, initY: nodeObj.y };
@@ -666,7 +632,7 @@
     }
     
     function startNodeRotate(e, id, space) {
-        const nodeObj = getContactData()[`${space}Nodes`].find(n => n.id === id);
+        const nodeObj = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
         if(!nodeObj || !nodeObj.isMine) return;
         activeRotateHandle = { id, space, nodeObj, startX: e.clientX, initRot: nodeObj.aiData?.rotation || 0 };
         e.stopPropagation();
@@ -687,7 +653,7 @@
         }
         else if (activeRotateHandle && activeRotateHandle.space === space) {
             const dx = e.clientX - activeRotateHandle.startX;
-            const newRot = activeRotateHandle.initRot + dx / 5; 
+            const newRot = activeRotateHandle.initRot + dx / 4; 
             if(!activeRotateHandle.nodeObj.aiData) activeRotateHandle.nodeObj.aiData = {};
             activeRotateHandle.nodeObj.aiData.rotation = newRot;
             
@@ -700,41 +666,67 @@
         if (activeNodeDrag || activeRotateHandle) {
             saveData();
             const targetObj = (activeNodeDrag || activeRotateHandle).nodeObj;
+            const conn = activeConnections[activeContactId];
             if(conn && conn.open) conn.send({ type: 'update_node', payload: { space, node: targetObj } });
             activeNodeDrag = null; activeRotateHandle = null;
         }
     }
 
     // --- メッセージ送信 ---
-    async function sendMessage() {
-        const inputEl = document.getElementById('chat-input-text');
+    async function sendMessage(space) {
+        const inputEl = space === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
         const text = inputEl.value.trim();
         const file = currentAttachedFile;
+        
         if (!text && !file) return;
-        if (!activeContactId) return alert('相手と接続してください');
+        if (!activeContactId) return alert('相手の画面を開いてください');
 
-        const aiData = await processEmotionAI(text);
-        const center = getCenterCoordinates('canvas');
-        center.x += (Math.random() - 0.5) * 100; center.y += (Math.random() - 0.5) * 100;
+        const aiData = await processEmotionAI(text, activeContactId);
+        
+        let px, py, parentId = null;
+        if (space === 'canvas') {
+            const center = getCenterCoordinates('canvas');
+            px = center.x + (Math.random() - 0.5) * 100; py = center.y + (Math.random() - 0.5) * 100;
+        } else {
+            parentId = replyTargetId;
+            const contact = appData.contacts[activeContactId];
+            if(parentId) {
+                const parent = contact.treeNodes.find(n => n.id === parentId);
+                if(parent) {
+                    const siblings = contact.treeNodes.filter(n => n.parentId === parentId).length;
+                    px = parent.x + (siblings * 220) - 110; py = parent.y + 160;
+                }
+            } else {
+                const center = getCenterCoordinates('tree');
+                px = center.x; py = center.y + 150;
+            }
+        }
 
         const newNode = {
             id: Date.now().toString(), text, file, aiData, isMine: true,
-            x: center.x, y: center.y, timestamp: Date.now()
+            x: px, y: py, parentId: parentId, timestamp: Date.now()
         };
 
-        const contact = getContactData();
-        contact.canvasNodes.push(newNode);
+        const contact = appData.contacts[activeContactId];
+        contact[`${space}Nodes`].push(newNode);
         
-        inputEl.value = ''; removeAttachedFile(); saveData();
-        appendNodeToDOM(newNode, 'canvas');
+        inputEl.value = ''; 
+        if(space === 'tree') cancelTreeReply();
+        document.getElementById('file-preview-modal').style.display='none';
+        currentAttachedFile = null;
+        saveData();
         
+        appendNodeToDOM(newNode, space);
+        if(space === 'tree') drawTreeLines();
+        
+        const conn = activeConnections[activeContactId];
         if (file) {
             animateProgress(newNode.id, () => {
-                replaceProgressWithFile(newNode, 'canvas');
-                if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: 'canvas', node: newNode } });
+                replaceProgressWithFile(newNode, space);
+                if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: space, node: newNode } });
             });
         } else {
-            if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: 'canvas', node: newNode } });
+            if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: space, node: newNode } });
         }
     }
 
@@ -747,60 +739,17 @@
     }
     function cancelTreeReply() { replyTargetId = null; document.getElementById('tree-reply-indicator').style.display = 'none'; }
 
-    async function sendTreeMessage() {
-        const inputEl = document.getElementById('tree-input-text');
-        const text = inputEl.value.trim(); const file = currentAttachedFile;
-        if (!text && !file) return; if (!activeContactId) return alert('相手と接続してください');
-
-        const aiData = await processEmotionAI(text);
-        const contact = getContactData();
-        
-        let px = 5000, py = 5000; 
-        if(replyTargetId) {
-            const parent = contact.treeNodes.find(n => n.id === replyTargetId);
-            if(parent) {
-                const siblings = contact.treeNodes.filter(n => n.parentId === replyTargetId).length;
-                px = parent.x + (siblings * 250) - 125;
-                py = parent.y + 150;
-            }
-        } else {
-            const center = getCenterCoordinates('tree');
-            px = center.x; py = center.y + 150;
-        }
-
-        const newNode = {
-            id: Date.now().toString(), text, file, aiData, isMine: true,
-            x: px, y: py, parentId: replyTargetId, timestamp: Date.now()
-        };
-
-        contact.treeNodes.push(newNode);
-        inputEl.value = ''; removeAttachedFile(); cancelTreeReply(); saveData();
-        
-        appendNodeToDOM(newNode, 'tree');
-        drawTreeLines();
-        
-        if (file) {
-            animateProgress(newNode.id, () => {
-                replaceProgressWithFile(newNode, 'tree');
-                if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: 'tree', node: newNode } });
-            });
-        } else {
-            if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: 'tree', node: newNode } });
-        }
-    }
 
     // --- DOM描画ロジック ---
-    function getContactData() { return appData.contacts[activeContactId]; }
-
     function renderWorkspace(space) {
-        if(!activeContactId || !getContactData()) {
-            document.getElementById(`${space}-layer`).innerHTML = space==='tree' ? '<svg id="tree-svg-layer"></svg>' : '';
+        const layer = document.getElementById(`${space}-layer`);
+        if(!activeContactId || !appData.contacts[activeContactId]) {
+            layer.innerHTML = space==='tree' ? '<svg id="tree-svg-layer"></svg>' : '';
             return;
         }
-        const layer = document.getElementById(`${space}-layer`);
-        layer.innerHTML = space==='tree' ? '<svg id="tree-svg-layer"></svg>' : '';
         
-        const nodes = getContactData()[`${space}Nodes`] || [];
+        layer.innerHTML = space==='tree' ? '<svg id="tree-svg-layer"></svg>' : '';
+        const nodes = appData.contacts[activeContactId][`${space}Nodes`] || [];
         nodes.forEach(n => appendNodeToDOM(n, space));
         
         if(space === 'tree') drawTreeLines();
@@ -823,38 +772,35 @@
         el.style.top = `${node.y}px`;
         el.style.transform = `rotate(${rot}deg)`;
         
-        const senderName = node.isMine ? appData.userName : (getContactData().name || '相手');
-        const senderIcon = node.isMine ? appData.userIcon : (getContactData().icon || '');
+        const senderName = node.isMine ? appData.userName : (appData.contacts[activeContactId].name || '相手');
+        const senderIcon = node.isMine ? appData.userIcon : (appData.contacts[activeContactId].icon || '');
 
-        let contentHtml = `<div class="node-header"><img src="${senderIcon}" class="node-icon">${senderName}</div>`;
+        // ヘッダー部分をドラッグハンドルに設定
+        let contentHtml = `<div class="node-header" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName}</div>`;
         
+        contentHtml += `<div class="node-body">`;
         if (node.text) {
             contentHtml += `<div class="node-text" style="font-family:'${font}', sans-serif; font-size:${scale}rem; color:${color};">${node.text.replace(/\n/g, '<br>')}</div>`;
         }
         
         if (node.file) {
             if (node.file._isUploading) {
-                contentHtml += createProgressHTML(node.id);
+                contentHtml += `<div class="file-progress-container"><div class="loading-spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div><div class="flip-text"><span id="flip-${node.id}">0</span>%</div></div>`;
             } else if (node.file.isImage) {
                 contentHtml += `<img class="node-image" src="${node.file.dataBase64}" onclick="window.open('${node.file.dataBase64}', '_blank')" style="pointer-events:auto; cursor:pointer;">`;
             } else {
                 contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; background:rgba(0,0,0,0.05); padding:8px; border-radius:8px; display:inline-block; margin-top:5px; text-decoration:none; color:inherit; font-weight:bold;">📎 ${node.file.name} を保存</a>`;
             }
         }
+        contentHtml += `</div>`;
         
         let controlsHtml = `<div class="node-controls">`;
-        if (space === 'tree') {
-            controlsHtml += `<div class="node-btn" onclick="setTreeReply('${node.id}', '${senderName}')">↩️</div>`;
-        }
+        if (space === 'tree') { controlsHtml += `<div class="node-btn" onclick="setTreeReply('${node.id}', '${senderName}')">↩️</div>`; }
         controlsHtml += `<div class="node-btn del" onclick="deleteNodeUI('${node.id}', '${space}')">✖</div></div>`;
         
         let handleHtml = space === 'canvas' && node.isMine ? `<div class="rotate-handle" onpointerdown="startNodeRotate(event, '${node.id}', '${space}')">↻</div>` : '';
         
         el.innerHTML = controlsHtml + contentHtml + handleHtml;
-        
-        if (node.isMine) {
-            el.onpointerdown = (e) => startNodeDrag(e, node.id, space);
-        }
         layer.appendChild(el);
     }
 
@@ -865,63 +811,68 @@
     }
 
     // --- 受信・更新・削除 ---
-    function handleReceivedNode(payload) {
+    function handleReceivedNode(targetId, payload) {
         const { space, node } = payload;
-        const contact = getContactData();
+        const contact = appData.contacts[targetId];
         node.isMine = false;
         
         if (node.file) {
             node.file._isUploading = true;
             contact[`${space}Nodes`].push(node);
-            if(currentTab === space) appendNodeToDOM(node, space);
+            if(activeContactId === targetId && currentTab === space) appendNodeToDOM(node, space);
             
             animateProgress(node.id, () => {
                 replaceProgressWithFile(node, space);
                 saveData();
-                if(space==='tree') drawTreeLines();
+                if(space==='tree' && activeContactId === targetId) drawTreeLines();
             });
         } else {
             contact[`${space}Nodes`].push(node);
-            if(currentTab === space) appendNodeToDOM(node, space);
+            if(activeContactId === targetId && currentTab === space) appendNodeToDOM(node, space);
             saveData();
-            if(space==='tree') drawTreeLines();
+            if(space==='tree' && activeContactId === targetId) drawTreeLines();
         }
     }
 
-    function handleNodeUpdate(payload) {
+    function handleNodeUpdate(targetId, payload) {
         const { space, node } = payload;
-        const contact = getContactData();
+        const contact = appData.contacts[targetId];
         const idx = contact[`${space}Nodes`].findIndex(n => n.id === node.id);
         if(idx !== -1) {
             node.isMine = false; 
             contact[`${space}Nodes`][idx] = node;
             saveData();
             
-            const el = document.getElementById(`node-${space}-${node.id}`);
-            if(el) {
-                el.style.left = `${node.x}px`; el.style.top = `${node.y}px`;
-                el.style.transform = `rotate(${node.aiData?.rotation || 0}deg)`;
+            if(activeContactId === targetId) {
+                const el = document.getElementById(`node-${space}-${node.id}`);
+                if(el) {
+                    el.style.left = `${node.x}px`; el.style.top = `${node.y}px`;
+                    el.style.transform = `rotate(${node.aiData?.rotation || 0}deg)`;
+                }
+                if(space==='tree') drawTreeLines();
             }
-            if(space==='tree') drawTreeLines();
         }
     }
 
     function deleteNodeUI(id, space) {
-        if(!confirm('このメッセージを削除しますか？\n(相手の画面からも消えます)')) return;
-        handleNodeDelete(space, id);
+        if(!confirm('削除しますか？\n(相手の画面からも消えます)')) return;
+        handleNodeDelete(activeContactId, space, id);
+        const conn = activeConnections[activeContactId];
         if(conn && conn.open) conn.send({ type: 'delete_node', payload: { space, id } });
     }
 
-    function handleNodeDelete(space, id) {
-        const contact = getContactData();
+    function handleNodeDelete(targetId, space, id) {
+        const contact = appData.contacts[targetId];
         if(!contact) return;
         contact[`${space}Nodes`] = contact[`${space}Nodes`].filter(n => n.id !== id);
         if(space === 'tree') { contact.treeNodes.forEach(n => { if(n.parentId === id) n.parentId = null; }); }
         
         saveData();
-        const el = document.getElementById(`node-${space}-${id}`);
-        if(el) el.remove();
-        if(space==='tree') drawTreeLines();
+        if(activeContactId === targetId) {
+            const el = document.getElementById(`node-${space}-${id}`);
+            if(el) el.remove();
+            if(space==='tree') drawTreeLines();
+        }
     }
 
     function drawTreeLines() {
@@ -930,13 +881,14 @@
         if(!svg) return;
         svg.innerHTML = '';
         
-        const nodes = getContactData().treeNodes || [];
+        const nodes = appData.contacts[activeContactId].treeNodes || [];
         nodes.forEach(n => {
             if(n.parentId) {
                 const parent = nodes.find(p => p.id === n.parentId);
                 if(parent) {
-                    const px = parent.x + 50; const py = parent.y + 40;
-                    const cx = n.x + 50; const cy = n.y + 40;
+                    // nodeのヘッダー下部あたりを結ぶ
+                    const px = parent.x + 80; const py = parent.y + 45;
+                    const cx = n.x + 80; const cy = n.y + 45;
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     const d = `M ${px},${py} C ${px},${(py+cy)/2} ${cx},${(py+cy)/2} ${cx},${cy}`;
                     path.setAttribute('d', d); path.setAttribute('class', 'tree-line');
@@ -944,6 +896,34 @@
                 }
             }
         });
+    }
+
+    // --- AI ---
+    async function processEmotionAI(text, targetId) {
+        if (!text) return null;
+        if (!appData.openAiKey) {
+            const conn = activeConnections[targetId];
+            if(!conn || !conn.open) return null; 
+            const reqId = Date.now().toString();
+            return new Promise(resolve => {
+                const handler = (e) => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(e.detail); };
+                window.addEventListener(`ai_result_${reqId}`, handler);
+                conn.send({ type: 'request_ai_process', payload: { reqId, text } });
+                setTimeout(() => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(null); }, 5000);
+            });
+        }
+        try {
+            const prompt = `以下のテキストの感情と声の大きさを判定しJSONで返せ。
+フォーマット: {"fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16|Yusei Magic|M PLUS Rounded 1c|Shippori Mincho]", "scale": [0.8から3.0の数値], "color": "[HEXカラーコード]", "rotation": [-10から10の数値(怒りの場合のみ、平常は0)]}
+テキスト: "${text}"`;
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appData.openAiKey}` },
+                body: JSON.stringify({ model: "gpt-4o", messages: [{role: "system", content: "You output strictly valid JSON."}, {role: "user", content: prompt}], response_format: { type: "json_object" } }) 
+            });
+            const data = await response.json();
+            if(data.error) throw new Error(data.error.message);
+            return JSON.parse(data.choices[0].message.content);
+        } catch(e) { console.error("AI Emotion Error:", e); return null; }
     }
 </script>
 
