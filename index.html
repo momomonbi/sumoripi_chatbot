@@ -49,19 +49,19 @@
         
         .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.65; pointer-events: none; transition: opacity 0.3s; }
         
-        /* 🧠 AI話題まとめパネル (超・透かし化＆コンパクト) */
+        /* 🧠 AI話題まとめパネル (より透明に、枠を縮める) */
         .ai-summary-panel { 
             position: absolute; top: 15px; right: 15px; z-index: 500; 
-            background: rgba(255, 255, 255, 0.15); /* 透明度UP */
-            backdrop-filter: blur(4px); /* ぼかし弱め */
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(6px); 
             padding: 12px 16px; border-radius: 16px; 
             width: fit-content; max-width: 220px; 
             font-size: 0.75rem; font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            border: 1px solid rgba(255,255,255,0.3); 
+            border: 1px solid rgba(255,255,255,0.4); 
             line-height: 1.5; pointer-events:none; 
         }
-        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.2); border-color: rgba(255,255,255,0.1); }
+        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.3); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0 0 6px 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
 
         .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
@@ -91,22 +91,19 @@
         .node-text { line-height: 1.4; word-break: break-word; pointer-events: none; }
         .text-collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .text-full { display: block; }
-        
-        /* 展開可能な長文のハイライト */
-        .node-text.text-collapsed.expandable-text { border-bottom: 2px dashed #ff9800; display: inline-block; padding-bottom: 2px; }
-        .chat-node.mine .node-text.text-collapsed.expandable-text { border-bottom: 2px dashed #007aff; }
 
-        /* --- ツリー用ノード --- */
+        /* --- ツリー用ノード（シンプルなスレッド形式） --- */
         .tree-node { position: absolute; background: transparent; padding: 0; min-width: 50px; max-width: 280px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.4s ease, top 0.4s ease; }
         .tree-node-name { display: flex; align-items: center; font-size: 0.65rem; color: #888; margin-bottom: 2px; font-weight: bold; pointer-events: none; white-space: nowrap; }
+        
         .tree-node-content { display: inline-block; border-bottom: 2px solid var(--accent-color); padding-bottom: 2px; cursor: pointer; pointer-events: auto; position: relative; }
         .tree-node.mine .tree-node-content { border-bottom-color: #007aff; }
         
-        /* 展開可能なツリーノードのハイライト */
-        .tree-node-content.expandable { border-bottom: 2px dashed #ff9800 !important; }
-        .tree-node.mine .tree-node-content.expandable { border-bottom: 2px dashed #007aff !important; }
+        /* 展開可能（長文）な場合の特別な下線スタイル */
+        .tree-node-content.expandable { border-bottom: 3px dashed #ff9800 !important; }
 
         .tree-node-text { font-size: 0.95rem; font-weight: bold; color: var(--text-color); line-height: 1.3; word-break: break-word; }
+        
         .tree-node .text-collapsed { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 180px; transition: max-width 0.3s; }
         .tree-node .text-full { display: none; }
         .tree-node.expanded .text-collapsed { display: none; }
@@ -468,12 +465,11 @@
             document.getElementById('btn-clear-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
             
-            if(appData.contacts[activeContactId].canvasSummary) {
+            if(currentTab === 'canvas') {
                 updateSummaryPanel(appData.contacts[activeContactId].canvasSummary, 'canvas');
-            }
-            if(activeTreeRootId) {
+            } else if (currentTab === 'tree' && activeTreeRootId) {
                 const rNode = appData.contacts[activeContactId].treeNodes.find(n => n.id === activeTreeRootId);
-                if (rNode && rNode.treeSummary) updateSummaryPanel(rNode.treeSummary, 'tree');
+                updateSummaryPanel(rNode ? rNode.treeSummary : "", 'tree');
             }
         } else {
             tabBtn.innerHTML = "🎨 キャンバス"; 
@@ -883,18 +879,17 @@
         if (rootNode) {
             const cont = document.getElementById('tree-workspace');
             const vs = viewStates['tree'];
-            vs.panX = (cont.offsetWidth / 2) - 100;
+            vs.panX = (cont.offsetWidth / 2) - 100; 
             vs.panY = (cont.offsetHeight / 2) - 50;
-            
-            // ツリーを切り替えた時にまとめがなければ生成
-            if (!rootNode.treeSummary) {
-                refreshTreeSummaryAI(activeContactId, id);
-            }
         }
         renderWorkspace('tree');
+
+        // もし要約がなければAIにリクエストする
+        if (rootNode && !rootNode.treeSummary) {
+            refreshTreeSummaryAI(activeContactId, id);
+        }
     }
 
-    // 重ならない座標の計算 (キャンバス用)
     function getNonOverlappingCanvasPos(parentId, contactNodes) {
         const parent = contactNodes.find(n => n.id === parentId);
         if(!parent) return {x: 0, y: 0};
@@ -922,12 +917,14 @@
 
     async function sendMessage(sourceSpace) {
         const inputEl = sourceSpace === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
+        if (!inputEl) return;
         const text = inputEl.value.trim();
         if (!text) return;
         if (!activeContactId) return alert('相手の画面を開いてください');
+        const contact = appData.contacts[activeContactId];
+        if (!contact) return;
 
         const id = Date.now().toString();
-        const contact = appData.contacts[activeContactId];
         const passedReplyId = sourceSpace === 'canvas' ? replyTargetId : null;
 
         // キャンバスの配置決定
@@ -986,6 +983,17 @@
         return family;
     }
 
+    // 子孫からルートのIDを遡って探す
+    function getTreeRootId(nodeId, allNodes) {
+        let curr = allNodes.find(n => n.id === nodeId);
+        while(curr && curr.parentId) {
+            const parent = allNodes.find(n => n.id === curr.parentId);
+            if(!parent) break;
+            curr = parent;
+        }
+        return curr ? curr.id : null;
+    }
+
     function isTreeNodeVisible(node, allNodes) {
         let curr = node;
         while(curr.parentId) {
@@ -1021,12 +1029,11 @@
         if (space === 'tree') {
             const allNodes = appData.contacts[activeContactId].treeNodes || [];
             if(allNodes.length > 0 && (!activeTreeRootId || !allNodes.find(n=>n.id===activeTreeRootId))) {
-                const roots = allNodes.filter(n => !n.parentId).sort((a,b)=>a.timestamp - b.timestamp);
-                if(roots.length > 0) activeTreeRootId = roots[roots.length-1].id;
+                const roots = allNodes.filter(n => !n.parentId).sort((a,b)=>a.timestamp - a.timestamp);
+                if(roots.length > 0) activeTreeRootId = roots[0].id;
                 else activeTreeRootId = allNodes[allNodes.length-1].id;
             }
             
-            // ツリーの自動階層レイアウト（スレッド風）
             const layout = {};
             let currentY = 0;
             const startX = 0;
@@ -1079,7 +1086,6 @@
         const timeStr = formatTime(node.timestamp);
         
         const displayText = ai.formattedText ? ai.formattedText.replace(/\n/g, '<br>') : node.text.replace(/\n/g, '<br>');
-        const isLong = node.text && (node.text.length >= 20 || node.text.includes('\n'));
         
         if (space === 'tree') {
             el.className = `tree-node ${node.isMine ? 'mine' : 'theirs'}`;
@@ -1088,12 +1094,14 @@
             const safeY = node.tempY !== undefined ? node.tempY : 0;
             el.style.left = `${safeX}px`; el.style.top = `${safeY}px`;
             
-            const collapsedText = isLong ? displayText.substring(0, 20).replace(/<br>/g, ' ') + '...' : displayText;
+            const isLong = node.text && node.text.length >= 20;
+            const collapsedText = isLong ? node.text.substring(0, 20) + '...' : displayText;
             
             const allNodes = appData.contacts[activeContactId].treeNodes || [];
             const hasChildren = allNodes.some(n => n.parentId === node.id);
             const toggleBtn = hasChildren ? `<div class="tree-btn" onclick="toggleTreeCollapse(event, '${node.id}')">${node.isCollapsed ? '➕' : '➖'}</div>` : '';
             
+            // expandableクラスを付与して展開可能な文を下線で強調
             let contentHtml = `
                 <div class="tree-node-name">${senderName} <span class="node-time" style="margin-left: 6px;">${timeStr}</span></div>
                 <div class="tree-node-content ${isLong ? 'expandable' : ''}" onclick="toggleTreeExpand(event, '${node.id}')">
@@ -1117,12 +1125,12 @@
             
             let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div><div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div><div class="action-handle link-handle" onclick="startLinkMode(event, '${node.id}')">🔗</div>` : `<div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div>`;
 
-            let expandBtn = isLong ? `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>` : '';
+            let expandBtn = `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>`;
 
             let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName} <span class="node-time">${timeStr}</span></div>`;
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
-            contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'} ${isLong && !isExpanded ? 'expandable-text' : ''}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+            contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
             contentHtml += `</div>`;
             
             el.innerHTML = expandBtn + handleHtml + contentHtml;
@@ -1214,6 +1222,7 @@
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
 
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        // 丸(ドット)のマーカー
         defs.innerHTML = `<marker id="dot-canvas" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"><circle cx="5" cy="5" r="4" fill="rgba(0, 122, 255, 0.8)" /></marker>`;
         svg.appendChild(defs);
         
@@ -1254,49 +1263,26 @@
         });
     }
 
-    // --- ツリーの線（文字との被り解消・S字曲線） ---
+    // --- ツリーの線（文字と被るので無効化） ---
     function drawTreeLines(visibleNodes) {
         if(currentTab !== 'tree' || !activeContactId) return;
         const svg = document.getElementById('tree-svg-layer');
         if(!svg) return;
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
-        
-        visibleNodes.forEach(n => {
-            if(n.parentId) {
-                const parent = visibleNodes.find(p => p.id === n.parentId);
-                if(parent) {
-                    const pEl = document.getElementById(`node-tree-${parent.id}`);
-                    const pContent = pEl ? pEl.querySelector('.tree-node-content') : null;
-                    const pW = pContent ? pContent.offsetWidth : 100;
-                    
-                    // 親の文字のすぐ右側から、子の文字の左側へ綺麗なS字で繋ぐ
-                    const px = (parent.tempX !== undefined ? parent.tempX : parent.x) + pW + 10; 
-                    const py = (parent.tempY !== undefined ? parent.tempY : parent.y) + 30;  
-                    const cx = (n.tempX !== undefined ? n.tempX : n.x) - 5;
-                    const cy = (n.tempY !== undefined ? n.tempY : n.y) + 30;
-                    
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    const d = `M ${px},${py} C ${(px+cx)/2},${py} ${(px+cx)/2},${cy} ${cx},${cy}`;
-                    path.setAttribute('d', d); 
-                    path.setAttribute('stroke', 'var(--accent-color)');
-                    path.setAttribute('stroke-width', '2');
-                    path.setAttribute('fill', 'none');
-                    path.setAttribute('opacity', '0.6');
-                    svg.appendChild(path);
-                }
-            }
-        });
+        // ※文字と被るため、ツリー画面での線画は行いません
     }
 
     // --- AI まとめ生成 ---
     async function requestSummaryAI(texts) {
         if (!appData.openAiKey || !texts) return null;
+        // プロンプト改善：記号排除、自然な文章、適度な改行
         const prompt = `以下の会話内容から話題を要約して下さい。
 ルール:
-1. 箇条書きの記号（- や ・ など）は一切使わずに文章として出力してください。ただし、読みやすさのために句読点（。、）は必ず使ってください。
-2. 横幅が長くならないように、文の区切りや20文字程度で適度に改行(\\n)を入れること。
-3. 最後に一言具体的なアドバイスを添えること。
-出力JSONフォーマット: {"summary": "要約テキスト"}
+1. 箇条書きの記号（- や ・ など）は一切使わずに、自然な文章として要約すること。
+2. 句読点（。や、）は使用して構いません。
+3. 横幅が長くならないように、20文字程度で適度な位置に改行を含めること。
+4. 最後に一言具体的なアドバイスを添えること。
+出力JSONフォーマット: {"summary": "要約テキスト（改行は \\n で表現）"}
 会話内容:
 ${texts.substring(0, 1000)}`;
 
@@ -1395,7 +1381,8 @@ ${texts.substring(0, 1000)}`;
             
             // 発言が完了した後にそれぞれの要約をバックグラウンドで更新
             refreshCanvasSummaryAI(targetId);
-            const rId = tNode && tNode.parentId ? getTreeFamily(tNode.parentId, contact.treeNodes)[0].id : nodeId;
+            
+            const rId = getTreeRootId(nodeId, contact.treeNodes) || nodeId;
             refreshTreeSummaryAI(targetId, rId);
 
         } catch(e) { console.error("AI解析エラー:", e); }
