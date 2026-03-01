@@ -52,16 +52,17 @@
         /* 🧠 AI話題まとめパネル (より透明に、枠を縮める) */
         .ai-summary-panel { 
             position: absolute; top: 15px; right: 15px; z-index: 500; 
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(6px); 
+            background: rgba(255, 255, 255, 0.15); /* 透かしを強く */
+            backdrop-filter: blur(2px); 
             padding: 12px 16px; border-radius: 16px; 
-            width: fit-content; max-width: 220px; 
+            width: fit-content; max-width: 240px; 
             font-size: 0.75rem; font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            border: 1px solid rgba(255,255,255,0.4); 
-            line-height: 1.5; pointer-events:none; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            line-height: 1.6; pointer-events:none; 
+            color: var(--text-color);
         }
-        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.3); border-color: rgba(255,255,255,0.1); }
+        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.15); border-color: rgba(255,255,255,0.05); }
         .ai-summary-panel h4 { margin: 0 0 6px 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
 
         .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
@@ -110,15 +111,15 @@
         .tree-node.expanded .text-full { display: block; animation: fadeIn 0.3s forwards; background: var(--card-bg); padding: 8px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: absolute; top: 100%; left: 0; min-width: 200px; z-index: 100; border: 1px solid rgba(128,128,128,0.2); backdrop-filter: blur(10px); }
         .tree-node.expanded { z-index: 101 !important; }
 
-        .tree-controls { display: flex; gap: 4px; position: absolute; right: -25px; top: 0; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .tree-controls { display: flex; gap: 4px; position: absolute; right: -50px; top: 0; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .tree-node:hover .tree-controls { opacity: 1; pointer-events: auto; }
-        .tree-btn { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tree-btn { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
         .linking-indicator { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #9c27b0; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); }
 
         .chat-controls-bar { display: flex; gap: 6px; align-items: flex-end; padding: 10px; background: var(--header-bg); border-top: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(15px); }
         .chat-input { flex-grow: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid rgba(128,128,128,0.3); font-size: 1rem; resize: none; min-height: 44px; max-height: 120px; background: rgba(255,255,255,0.9); line-height: 1.4; color: #333; }
-        .chat-action-btn { background: var(--accent-color); color: white; border-radius: 50%; width: 44px; height: 44px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .chat-action-btn { background: var(--accent-color); color: white; border-radius: 50%; width: 44px; height: 44px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
         .reply-indicator { display: none; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(0, 122, 255, 0.1); color: var(--accent-color); font-size: 0.85rem; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
@@ -152,6 +153,13 @@
 <div id="new-message-nav" class="nav-notification" onclick="jumpToNewMessage()">📩 新着メッセージ ↓</div>
 <div id="linking-indicator" class="linking-indicator">親にしたい発言をタップしてください<button onclick="cancelLinkMode()" style="margin-left:10px; background:white; color:#9c27b0; border:none; border-radius:50%; width:20px; height:20px;">✖</button></div>
 
+<div id="global-input-preview-area" style="display:none; position:absolute; bottom:65px; left:15px; z-index:1001; background:var(--card-bg); padding:8px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); border:1px solid rgba(128,128,128,0.2);">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div id="global-input-preview-content" style="font-size:0.8rem; font-weight:bold; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+        <button onclick="removeAttachedFile()" style="background:#f44336; color:#fff; width:24px; height:24px; border-radius:50%; border:none; cursor:pointer; font-weight:bold;">✖</button>
+    </div>
+</div>
+
 <div id="tab-canvas" class="tab-content active">
     <div class="online-indicator" id="online-indicator-canvas">
         <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 オンライン</div>
@@ -172,10 +180,12 @@
     
     <div class="reply-indicator" id="canvas-reply-indicator">
         <span>↪️ <span id="canvas-reply-target-name"></span> に返信中...</span>
-        <button onclick="cancelReply()" style="background:transparent; color:var(--accent-color); font-weight:bold; font-size:1.2rem;">✖</button>
+        <button onclick="cancelReply('canvas')" style="background:transparent; color:var(--accent-color); font-weight:bold; font-size:1.2rem;">✖</button>
     </div>
 
     <div class="chat-controls-bar">
+        <input type="file" id="file-input-canvas" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn" onclick="document.getElementById('file-input-canvas').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
         <textarea id="chat-input-text" class="chat-input" placeholder="メッセージを入力..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('canvas'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('canvas')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -201,7 +211,14 @@
         </div>
     </div>
     
+    <div class="reply-indicator" id="tree-reply-indicator">
+        <span>↪️ <span id="tree-reply-target-name"></span> に返信中...</span>
+        <button onclick="cancelReply('tree')" style="background:transparent; color:var(--accent-color); font-weight:bold; font-size:1.2rem;">✖</button>
+    </div>
+
     <div class="chat-controls-bar">
+        <input type="file" id="file-input-tree" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
         <textarea id="tree-input-text" class="chat-input" placeholder="自動でツリーに配置されます..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('tree')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -282,7 +299,7 @@
 <div id="tree-manage-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0;">🌳 ツリー切替 / 管理</h3>
-        <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">表示したいツリー（話題の始まり）を選択してください。</p>
+        <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">表示したい話題の始まりを選択してください。</p>
         <div id="tree-manage-list" style="max-height:50vh; overflow-y:auto; margin-bottom:15px;"></div>
         <button onclick="document.getElementById('tree-manage-modal').style.display='none'" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:#333;">閉じる</button>
     </div>
@@ -304,6 +321,7 @@
     let targetPanCoords = null; 
     let linkingSourceId = null;
     let activeTreeRootId = null; 
+    let currentAttachedFile = null; // 添付ファイル保持用
 
     const viewStates = {
         canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
@@ -480,6 +498,40 @@
             document.getElementById('new-message-nav').style.display = 'none';
         }
         setTimeout(() => { if(tabBtn.classList.contains('active')) document.getElementById('tab-highlight').style.width = tabBtn.offsetWidth + 'px'; }, 50);
+    }
+
+    // --- ファイル添付ロジック ---
+    function handleFileSelect(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentAttachedFile = {
+                name: file.name,
+                type: file.type,
+                isImage: file.type.startsWith('image/'),
+                dataBase64: e.target.result
+            };
+            showFilePreview();
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    function showFilePreview() {
+        if(!currentAttachedFile) return;
+        const content = document.getElementById('global-input-preview-content');
+        if(currentAttachedFile.isImage) {
+            content.innerHTML = `<img src="${currentAttachedFile.dataBase64}" style="height:30px; border-radius:4px; vertical-align:middle;"> <span style="vertical-align:middle;">画像を添付中...</span>`;
+        } else {
+            content.innerHTML = `📎 ${currentAttachedFile.name}`;
+        }
+        document.getElementById('global-input-preview-area').style.display = 'block';
+    }
+
+    function removeAttachedFile() {
+        currentAttachedFile = null;
+        document.getElementById('global-input-preview-area').style.display = 'none';
     }
 
     // --- P2P & 履歴閲覧 ---
@@ -779,6 +831,7 @@
                     if(cNode) conn.send({ type: 'update_node', payload: { space: 'canvas', node: cNode } });
                     if(tNode) conn.send({ type: 'update_node', payload: { space: 'tree', node: tNode } });
                 }
+                refreshCanvasSummaryAI(activeContactId);
             }
             cancelLinkMode();
         } else {
@@ -819,16 +872,24 @@
         }
     }
 
+    // 両画面対応のリプライターゲット
+    let replyTargetId = null;
     function setReplyTarget(id, name, space) {
-        if(space !== 'canvas') return;
         replyTargetId = id;
-        document.getElementById('canvas-reply-target-name').innerText = name;
-        document.getElementById('canvas-reply-indicator').style.display = 'flex';
-        document.getElementById('chat-input-text').focus();
+        if (space === 'canvas') {
+            document.getElementById('canvas-reply-target-name').innerText = name;
+            document.getElementById('canvas-reply-indicator').style.display = 'flex';
+            document.getElementById('chat-input-text').focus();
+        } else {
+            document.getElementById('tree-reply-target-name').innerText = name;
+            document.getElementById('tree-reply-indicator').style.display = 'flex';
+            document.getElementById('tree-input-text').focus();
+        }
     }
-    function cancelReply() { 
+    function cancelReply(space) { 
         replyTargetId = null; 
-        document.getElementById('canvas-reply-indicator').style.display = 'none'; 
+        if(!space || space === 'canvas') document.getElementById('canvas-reply-indicator').style.display = 'none'; 
+        if(!space || space === 'tree') document.getElementById('tree-reply-indicator').style.display = 'none'; 
     }
 
     function clearCanvas() {
@@ -856,7 +917,7 @@
         } else {
             roots.sort((a,b)=>b.timestamp - a.timestamp).forEach(n => {
                 const name = n.isMine ? appData.userName : (appData.contacts[activeContactId].name || '相手');
-                const text = (n.text || '').substring(0, 30) + '...';
+                const text = (n.text || '画像など').substring(0, 30) + '...';
                 const isCurrent = (activeTreeRootId === n.id);
                 list.innerHTML += `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:${isCurrent ? 'rgba(0,122,255,0.1)' : '#f9f9f9'}; border-radius:8px; margin-bottom:8px; border:1px solid ${isCurrent ? 'rgba(0,122,255,0.3)' : '#eee'}; cursor:pointer;" onclick="switchTreeRoot('${n.id}')">
@@ -884,7 +945,6 @@
         }
         renderWorkspace('tree');
 
-        // もし要約がなければAIにリクエストする
         if (rootNode && !rootNode.treeSummary) {
             refreshTreeSummaryAI(activeContactId, id);
         }
@@ -915,55 +975,77 @@
         return {x: px, y: py};
     }
 
+    // --- メイン送信処理 (安全設計) ---
     async function sendMessage(sourceSpace) {
-        const inputEl = sourceSpace === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
-        if (!inputEl) return;
-        const text = inputEl.value.trim();
-        if (!text) return;
-        if (!activeContactId) return alert('相手の画面を開いてください');
-        const contact = appData.contacts[activeContactId];
-        if (!contact) return;
+        try {
+            const inputEl = sourceSpace === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
+            if (!inputEl) return;
+            const text = inputEl.value.trim();
+            const file = currentAttachedFile;
 
-        const id = Date.now().toString();
-        const passedReplyId = sourceSpace === 'canvas' ? replyTargetId : null;
+            if (!text && !file) return;
+            if (!activeContactId) {
+                alert('相手の画面を開いてください');
+                return;
+            }
+            
+            // データ構造の安全確保
+            if (!appData.contacts[activeContactId]) {
+                appData.contacts[activeContactId] = { name: "ID:"+activeContactId, icon: "", canvasNodes: [], treeNodes: [] };
+            }
+            const contact = appData.contacts[activeContactId];
+            if (!contact.canvasNodes) contact.canvasNodes = [];
+            if (!contact.treeNodes) contact.treeNodes = [];
 
-        // キャンバスの配置決定
-        let cx, cy;
-        if (passedReplyId) {
-            const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
-            cx = pos.x; cy = pos.y;
-        } else {
-            const centerC = getCenterCoordinates('canvas');
-            cx = centerC.x + (Math.random() - 0.5) * 150; cy = centerC.y + (Math.random() - 0.5) * 150;
+            const id = Date.now().toString();
+            const passedReplyId = replyTargetId;
+
+            // キャンバスの配置決定
+            let cx = 0, cy = 0;
+            if (sourceSpace === 'canvas') {
+                if (passedReplyId) {
+                    const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
+                    cx = pos.x; cy = pos.y;
+                } else {
+                    const centerC = getCenterCoordinates('canvas');
+                    cx = centerC.x + (Math.random() - 0.5) * 150; cy = centerC.y + (Math.random() - 0.5) * 150;
+                }
+            }
+
+            const canvasNode = { id, text, file, aiData: null, isMine: true, x: cx, y: cy, parentId: passedReplyId, timestamp: Date.now(), isExpanded: false };
+            const treeNode = { id, text, file, aiData: null, isMine: true, x: 0, y: 0, parentId: passedReplyId, timestamp: Date.now(), isCollapsed: false };
+
+            contact.canvasNodes.push(canvasNode);
+            contact.treeNodes.push(treeNode);
+            
+            inputEl.value = ''; 
+            cancelReply(sourceSpace);
+            if (file) removeAttachedFile();
+            
+            if (!passedReplyId && (!activeTreeRootId || !contact.treeNodes.find(n=>n.id===activeTreeRootId))) {
+                activeTreeRootId = treeNode.id;
+            }
+            
+            saveData();
+            
+            renderWorkspace('canvas');
+            if (!passedReplyId || getTreeFamily(activeTreeRootId, contact.treeNodes).find(n => n.id === passedReplyId)) {
+                renderWorkspace('tree');
+            }
+            
+            const conn = activeConnections[activeContactId];
+            if(conn && conn.open) {
+                conn.send({ type: 'new_node', payload: { space: 'canvas', node: canvasNode } });
+                conn.send({ type: 'new_node', payload: { space: 'tree', node: treeNode } });
+            }
+
+            // AI解析はバックグラウンドで実行（画面フリーズ防止）
+            processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
+            
+        } catch (error) {
+            console.error("送信エラー:", error);
+            alert("送信処理中にエラーが発生しました。\n" + error.message);
         }
-        const canvasNode = { id, text, aiData: null, isMine: true, x: cx, y: cy, parentId: passedReplyId, timestamp: Date.now(), isExpanded: false };
-
-        const treeNode = { id, text, aiData: null, isMine: true, x: 0, y: 0, parentId: passedReplyId, timestamp: Date.now(), isCollapsed: false };
-
-        contact.canvasNodes.push(canvasNode);
-        contact.treeNodes.push(treeNode);
-        
-        inputEl.value = ''; 
-        if(sourceSpace === 'canvas') cancelReply();
-        
-        if (!passedReplyId && (!activeTreeRootId || !contact.treeNodes.find(n=>n.id===activeTreeRootId))) {
-            activeTreeRootId = treeNode.id;
-        }
-        
-        saveData();
-        
-        renderWorkspace('canvas');
-        if (!passedReplyId || getTreeFamily(activeTreeRootId, contact.treeNodes).find(n => n.id === passedReplyId)) {
-            renderWorkspace('tree');
-        }
-        
-        const conn = activeConnections[activeContactId];
-        if(conn && conn.open) {
-            conn.send({ type: 'new_node', payload: { space: 'canvas', node: canvasNode } });
-            conn.send({ type: 'new_node', payload: { space: 'tree', node: treeNode } });
-        }
-
-        processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
     }
 
     // --- DOM描画 ---
@@ -983,7 +1065,6 @@
         return family;
     }
 
-    // 子孫からルートのIDを遡って探す
     function getTreeRootId(nodeId, allNodes) {
         let curr = allNodes.find(n => n.id === nodeId);
         while(curr && curr.parentId) {
@@ -1042,7 +1123,8 @@
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
                 layout[node.id] = { x: startX + (depth * 60), y: currentY };
-                currentY += 80; 
+                // 画像付きノードは高さを広めに取る
+                currentY += (node.file && node.file.isImage) ? 140 : 80;
                 
                 if(!node.isCollapsed) {
                     const children = allNodes.filter(n => n.parentId === nodeId).sort((a,b)=>a.timestamp-b.timestamp);
@@ -1085,7 +1167,8 @@
         const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
         const timeStr = formatTime(node.timestamp);
         
-        const displayText = ai.formattedText ? ai.formattedText.replace(/\n/g, '<br>') : node.text.replace(/\n/g, '<br>');
+        const safeText = node.text ? node.text.replace(/\n/g, '<br>') : '';
+        const displayText = ai.formattedText ? ai.formattedText.replace(/\n/g, '<br>') : safeText;
         
         if (space === 'tree') {
             el.className = `tree-node ${node.isMine ? 'mine' : 'theirs'}`;
@@ -1094,22 +1177,29 @@
             const safeY = node.tempY !== undefined ? node.tempY : 0;
             el.style.left = `${safeX}px`; el.style.top = `${safeY}px`;
             
-            const isLong = node.text && node.text.length >= 20;
-            const collapsedText = isLong ? node.text.substring(0, 20) + '...' : displayText;
+            const isLong = displayText.length >= 20;
+            const collapsedText = isLong ? displayText.substring(0, 20) + '...' : displayText;
             
             const allNodes = appData.contacts[activeContactId].treeNodes || [];
             const hasChildren = allNodes.some(n => n.parentId === node.id);
             const toggleBtn = hasChildren ? `<div class="tree-btn" onclick="toggleTreeCollapse(event, '${node.id}')">${node.isCollapsed ? '➕' : '➖'}</div>` : '';
+            const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
-            // expandableクラスを付与して展開可能な文を下線で強調
             let contentHtml = `
                 <div class="tree-node-name">${senderName} <span class="node-time" style="margin-left: 6px;">${timeStr}</span></div>
                 <div class="tree-node-content ${isLong ? 'expandable' : ''}" onclick="toggleTreeExpand(event, '${node.id}')">
                     <div class="tree-node-text text-collapsed" style="font-family:'${font}', sans-serif; color:${color};">${collapsedText}</div>
                     ${isLong ? `<div class="tree-node-text text-full" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>` : ''}
-                </div>
-                <div class="tree-controls">${toggleBtn}</div>
             `;
+            
+            if (node.file) {
+                if (node.file.isImage) {
+                    contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; border-radius:6px; margin-top:4px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
+                } else {
+                    contentHtml += `<br><a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; font-size:0.8rem; background:rgba(0,0,0,0.05); padding:4px; border-radius:4px; text-decoration:none;">📎 ${node.file.name}</a>`;
+                }
+            }
+            contentHtml += `</div><div class="tree-controls">${replyBtn}${toggleBtn}</div>`;
             el.innerHTML = contentHtml;
             
         } else {
@@ -1130,7 +1220,16 @@
             let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName} <span class="node-time">${timeStr}</span></div>`;
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
-            contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+            if(displayText) {
+                contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+            }
+            if (node.file) {
+                if (node.file.isImage) {
+                    contentHtml += `<img src="${node.file.dataBase64}" style="max-width:100%; border-radius:8px; margin-top:8px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
+                } else {
+                    contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; display:inline-block; margin-top:8px; padding:6px; background:rgba(0,0,0,0.05); border-radius:6px; text-decoration:none; font-size:0.8rem;">📎 ${node.file.name}</a>`;
+                }
+            }
             contentHtml += `</div>`;
             
             el.innerHTML = expandBtn + handleHtml + contentHtml;
@@ -1153,7 +1252,7 @@
                 const screenX = ((node.tempX !== undefined ? node.tempX : node.x) * vs.scale) + vs.panX;
                 const screenY = ((node.tempY !== undefined ? node.tempY : node.y) * vs.scale) + vs.panY;
                 if (screenX < 0 || screenX > cont.offsetWidth || screenY < 0 || screenY > cont.offsetHeight) {
-                    showNewMessageNav(node.tempX || node.x, node.tempY || node.y, space);
+                    showNewMessageNav(node.tempX !== undefined ? node.tempX : node.x, node.tempY !== undefined ? node.tempY : node.y, space);
                 }
             }
         }
@@ -1209,7 +1308,7 @@
         x = dx > 0 ? Math.abs(x) : -Math.abs(x);
         y = dy > 0 ? Math.abs(y) : -Math.abs(y);
         
-        const margin = 10;
+        const margin = 14; // ドットのサイズ分マージンを取る
         const len = Math.hypot(x, y);
         x += (x/len) * margin; y += (y/len) * margin;
         return {x, y};
@@ -1265,26 +1364,23 @@
 
     // --- ツリーの線（文字と被るので無効化） ---
     function drawTreeLines(visibleNodes) {
-        if(currentTab !== 'tree' || !activeContactId) return;
+        // ツリー側は縦にスレッド表示されるため線は引きません
         const svg = document.getElementById('tree-svg-layer');
-        if(!svg) return;
-        while (svg.firstChild) { svg.removeChild(svg.firstChild); }
-        // ※文字と被るため、ツリー画面での線画は行いません
+        if(svg) { while (svg.firstChild) { svg.removeChild(svg.firstChild); } }
     }
 
     // --- AI まとめ生成 ---
     async function requestSummaryAI(texts) {
         if (!appData.openAiKey || !texts) return null;
-        // プロンプト改善：記号排除、自然な文章、適度な改行
         const prompt = `以下の会話内容から話題を要約して下さい。
 ルール:
-1. 箇条書きの記号（- や ・ など）は一切使わずに、自然な文章として要約すること。
+1. 箇条書きの記号（- や ・、# など）は一切使わずに、自然な文章として要約すること。
 2. 句読点（。や、）は使用して構いません。
-3. 横幅が長くならないように、20文字程度で適度な位置に改行を含めること。
+3. 横幅が長くならないように、15〜20文字程度で適度な位置に改行(\\n)を含めること。
 4. 最後に一言具体的なアドバイスを添えること。
 出力JSONフォーマット: {"summary": "要約テキスト（改行は \\n で表現）"}
 会話内容:
-${texts.substring(0, 1000)}`;
+${texts.substring(0, 1500)}`;
 
         try {
             const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -1300,7 +1396,7 @@ ${texts.substring(0, 1000)}`;
     async function refreshCanvasSummaryAI(targetId) {
         if(!targetId) return;
         const nodes = appData.contacts[targetId].canvasNodes || [];
-        const texts = nodes.map(n => n.text).join("\n");
+        const texts = nodes.map(n => n.text).filter(t => t).join("\n");
         if(!texts) {
             appData.contacts[targetId].canvasSummary = ""; saveData();
             updateSummaryPanel("", 'canvas'); return;
@@ -1319,7 +1415,7 @@ ${texts.substring(0, 1000)}`;
         if(!targetId || !rootId) return;
         const nodes = appData.contacts[targetId].treeNodes || [];
         const family = getTreeFamily(rootId, nodes);
-        const texts = family.map(n => n.text).join("\n");
+        const texts = family.map(n => n.text).filter(t => t).join("\n");
         if(!texts) { updateSummaryPanel("", 'tree'); return; }
         
         document.querySelector('#tree-summary-panel .ai-summary-text').innerHTML = "🔄 まとめています...";
@@ -1335,10 +1431,10 @@ ${texts.substring(0, 1000)}`;
 
     // --- AI 通常解析 (配置と装飾) ---
     async function processEmotionAndTreeAI(text, targetId, nodeId, canvasParentId) {
-        if (!appData.openAiKey) return; 
+        if (!appData.openAiKey || !text) return; 
         
         const contact = appData.contacts[targetId];
-        const treeContext = (contact.treeNodes || []).slice(-20).filter(n => n.id !== nodeId).map(n => ({id: n.id, text: n.text.substring(0,30)}));
+        const treeContext = (contact.treeNodes || []).slice(-20).filter(n => n.id !== nodeId && n.text).map(n => ({id: n.id, text: n.text.substring(0,30)}));
 
         try {
             const prompt = `あなたはマインドマップ構築AIです。
@@ -1370,7 +1466,6 @@ ${texts.substring(0, 1000)}`;
             }
             saveData();
 
-            // 相手に送信
             const conn = activeConnections[targetId];
             if(conn && conn.open) {
                 conn.send({ type: 'update_node', payload: { space: 'canvas', node: cNode } });
@@ -1379,9 +1474,8 @@ ${texts.substring(0, 1000)}`;
 
             if(activeContactId === targetId) renderWorkspace(currentTab);
             
-            // 発言が完了した後にそれぞれの要約をバックグラウンドで更新
+            // 発言完了後にバックグラウンドで要約を更新
             refreshCanvasSummaryAI(targetId);
-            
             const rId = getTreeRootId(nodeId, contact.treeNodes) || nodeId;
             refreshTreeSummaryAI(targetId, rId);
 
