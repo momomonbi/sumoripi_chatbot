@@ -8,27 +8,29 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         /* --- 基本・テーマ設定 --- */
-        :root { --bg-color: #f0f4f8; --header-bg: rgba(255, 255, 255, 0.95); --accent-color: #007aff; --text-color: #333; --app-font: 'Zen Maru Gothic', sans-serif; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --header-bg: rgba(30, 30, 30, 0.95); --accent-color: #ff4081; --text-color: #eee; }
-        [data-theme="retro"] { --bg-color: #f4ecd8; --header-bg: rgba(244, 236, 216, 0.95); --accent-color: #8b5a2b; --text-color: #4a3018; --app-font: 'Kiwi Maru', serif; }
+        :root { --bg-color: #f0f4f8; --header-bg: rgba(255, 255, 255, 0.95); --accent-color: #007aff; --text-color: #333; --app-font: 'Zen Maru Gothic', sans-serif; --card-bg: rgba(255, 255, 255, 0.8); }
+        [data-theme="dark"] { --bg-color: #1a1a1a; --header-bg: rgba(30, 30, 30, 0.95); --accent-color: #ff4081; --text-color: #eee; --card-bg: rgba(50, 50, 50, 0.8); }
+        [data-theme="retro"] { --bg-color: #f4ecd8; --header-bg: rgba(244, 236, 216, 0.95); --accent-color: #8b5a2b; --text-color: #4a3018; --app-font: 'Kiwi Maru', serif; --card-bg: rgba(255, 250, 240, 0.8); }
+        [data-theme="cute"] { --bg-color: #fff0f5; --header-bg: rgba(255, 182, 193, 0.95); --accent-color: #ff69b4; --text-color: #5d4037; --app-font: 'M PLUS Rounded 1c', sans-serif; --card-bg: rgba(255, 255, 255, 0.8); }
+        [data-theme="glass"] { --bg-color: #e8f4f8; --header-bg: rgba(255, 255, 255, 0.4); --accent-color: #40c0cb; --text-color: #2c5263; --app-font: 'Noto Sans JP', sans-serif; --card-bg: rgba(255, 255, 255, 0.5); }
 
-        body { font-family: var(--app-font); margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(28px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; }
-        [data-theme="dark"] .glass-card { background: rgba(50, 50, 50, 0.8); border: 1px solid rgba(255, 255, 255, 0.05); }
+        body { font-family: var(--app-font); margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); transition: background-color 0.3s; }
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(28px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; }
+        [data-theme="dark"] .glass-card { border: 1px solid rgba(255, 255, 255, 0.05); }
         button { font-family: inherit; cursor: pointer; border: none; border-radius: 14px; transition: transform 0.2s, background-color 0.2s; touch-action: manipulation; }
         button:active { transform: scale(0.92); }
         input, select, textarea { font-family: inherit; box-sizing: border-box; outline: none; }
 
         /* ヘッダー・タブ */
-        .header-area { flex-shrink: 0; z-index: 1000; position: relative; background: var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header-area { flex-shrink: 0; z-index: 1000; position: relative; background: var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); backdrop-filter: blur(15px); }
         .app-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
         .app-header h1 { margin: 0; font-size: 1.1rem; font-weight: 900; color: var(--accent-color); }
-        .tabs { display: flex; margin: 5px 10px 10px 10px; border-radius: 16px; padding: 5px; background: rgba(128,128,128,0.1); position: relative; }
-        .tab { flex: 1; text-align: center; padding: 10px 0; color: var(--text-color); opacity: 0.6; font-weight: 900; font-size: 0.9rem; border-radius: 12px; cursor: pointer; position: relative; z-index: 2; transition: all 0.3s; }
+        .tabs { display: flex; margin: 5px 10px 10px 10px; border-radius: 16px; padding: 5px; background: rgba(128,128,128,0.15); position: relative; }
+        .tab { flex: 1; text-align: center; padding: 10px 0; color: var(--text-color); opacity: 0.6; font-weight: 900; font-size: 0.85rem; border-radius: 12px; cursor: pointer; position: relative; z-index: 2; transition: all 0.3s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tab.active { opacity: 1; color: #fff; }
-        .tab.connected { background: #4CAF50; color: white; opacity: 1; animation: pulse 2s infinite; }
+        .tab.connected { background: #4CAF50 !important; color: white !important; opacity: 1; animation: pulse 2s infinite; }
         .tab-highlight { position: absolute; top: 5px; bottom: 5px; left: 5px; width: 0; background: var(--accent-color); border-radius: 12px; z-index: 1; transition: transform 0.3s, width 0.3s; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
 
         .tab-content { display: none; flex-grow: 1; position: relative; overflow: hidden; }
         .tab-content.active { display: flex; flex-direction: column; animation: fadeIn 0.3s forwards; }
@@ -39,13 +41,12 @@
         .workspace-container:active { cursor: grabbing; }
         .workspace-layer { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: 10000px; height: 10000px; }
         
-        .chat-node { position: absolute; background: rgba(255,255,255,0.9); border-radius: 20px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 100px; max-width: 300px; cursor: move; user-select: none; transition: box-shadow 0.2s; z-index: 10; display: flex; flex-direction: column; gap: 5px; }
-        [data-theme="dark"] .chat-node { background: rgba(40,40,40,0.9); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 100px; max-width: 300px; cursor: move; user-select: none; transition: box-shadow 0.2s; z-index: 10; display: flex; flex-direction: column; gap: 5px; backdrop-filter: blur(10px); }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
         
         .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.8; }
-        .node-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #ccc; }
+        .node-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #ccc; border: 1px solid rgba(0,0,0,0.1); }
         .node-text { line-height: 1.4; word-break: break-word; }
         .node-image { max-width: 100%; border-radius: 12px; margin-top: 5px; pointer-events: none; }
         
@@ -54,7 +55,6 @@
         .node-btn { background: #fff; color: #333; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
         .node-btn.del { color: #f44336; }
         
-        /* 回転ハンドル (キャンバスのみ) */
         .rotate-handle { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; cursor: alias; display: none; align-items: center; justify-content: center; color: white; font-size: 10px; }
         .chat-node:hover .rotate-handle { display: flex; }
 
@@ -63,14 +63,13 @@
         .tree-line { stroke: var(--accent-color); stroke-width: 3; fill: none; opacity: 0.5; stroke-dasharray: 6, 6; }
 
         /* 入力バー */
-        .chat-controls-bar { display: flex; gap: 6px; align-items: flex-end; padding: 10px; background: var(--header-bg); border-top: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); }
+        .chat-controls-bar { display: flex; gap: 6px; align-items: flex-end; padding: 10px; background: var(--header-bg); border-top: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(15px); }
         .chat-input { flex-grow: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid rgba(128,128,128,0.3); font-size: 1rem; resize: none; min-height: 44px; max-height: 120px; background: rgba(255,255,255,0.9); line-height: 1.4; color: #333; }
         .chat-action-btn { background: var(--accent-color); color: white; border-radius: 50%; width: 44px; height: 44px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         
-        /* 返信先インジケーター */
         .reply-indicator { display: none; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(0, 122, 255, 0.1); color: var(--accent-color); font-size: 0.85rem; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); }
 
-        /* --- モーダル・ポップアップ (白背景で枠内) --- */
+        /* --- モーダル・ポップアップ --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center; padding: 15px; }
         .modal-content { background: #fff; color: #333; width: 100%; max-width: 360px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
@@ -78,7 +77,7 @@
         .contact-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); }
 
         /* アイコントリミングエディタ */
-        .crop-container { width: 100%; height: 250px; background: #eee; position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 15px; touch-action: none; }
+        .crop-container { width: 100%; height: 250px; background: #eee; position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 10px; touch-action: none; }
         .crop-image { position: absolute; transform-origin: 0 0; }
         .crop-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); pointer-events: none; border: 2px dashed rgba(255,255,255,0.8); border-radius: 50%; box-sizing: border-box; }
 
@@ -109,25 +108,21 @@
 
     <div class="tabs" id="main-tabs">
         <div class="tab-highlight" id="tab-highlight"></div>
-        <div class="tab active" id="tab-btn-canvas" onclick="switchTab('tab-canvas', this)">🎨 キャンバス</div>
+        <div class="tab active" id="tab-btn-canvas" onclick="handleCanvasTabClick(this)">🎨 キャンバス</div>
         <div class="tab" id="tab-btn-tree" onclick="switchTab('tab-tree', this)">🌳 ツリー</div>
         <div class="tab" id="tab-btn-settings" onclick="switchTab('tab-settings', this)">⚙️ 設定</div>
-        <div id="connection-status-btn" onclick="openConnectModal()" style="position:absolute; right:10px; top:5px; bottom:5px; background:rgba(128,128,128,0.2); padding:0 15px; border-radius:10px; display:flex; align-items:center; font-size:0.8rem; font-weight:bold; cursor:pointer; color:var(--text-color); transition:background 0.3s;">
-            未接続
-        </div>
     </div>
 </div>
 
 <div id="tab-canvas" class="tab-content active">
     <div class="workspace-container" id="canvas-workspace">
-        <div class="workspace-layer" id="canvas-layer">
-            </div>
+        <div class="workspace-layer" id="canvas-layer"></div>
     </div>
     
-    <div class="chat-preview-area" id="input-preview-area">
-        <div class="preview-item">
+    <div class="chat-preview-area" id="input-preview-area" style="display:none; padding:8px; background:var(--card-bg); border-top:1px solid rgba(128,128,128,0.2);">
+        <div class="preview-item" style="display:inline-block; position:relative; background:#fff; padding:4px; border-radius:8px;">
             <div id="input-preview-content" style="font-size:0.8rem; font-weight:bold;"></div>
-            <button class="preview-remove" onclick="removeAttachedFile()">✖</button>
+            <button onclick="removeAttachedFile()" style="position:absolute; top:-8px; right:-8px; background:#f44336; color:#fff; width:22px; height:22px; border-radius:50%; border:none;">✖</button>
         </div>
     </div>
 
@@ -135,7 +130,9 @@
         <input type="file" id="file-input" style="display:none;" onchange="handleFileSelect(this)">
         <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
         <textarea id="chat-input-text" class="chat-input" placeholder="メッセージ (Shift+Enterで改行)" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, sendMessage)"></textarea>
-        <button class="chat-action-btn" onclick="sendMessage()">➤</button>
+        <button class="chat-action-btn" onclick="sendMessage()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
     </div>
 </div>
 
@@ -143,7 +140,7 @@
     <div class="workspace-container" id="tree-workspace">
         <div class="workspace-layer" id="tree-layer">
             <svg id="tree-svg-layer"></svg>
-            </div>
+        </div>
     </div>
     
     <div class="reply-indicator" id="tree-reply-indicator">
@@ -154,7 +151,9 @@
     <div class="chat-controls-bar">
         <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
         <textarea id="tree-input-text" class="chat-input" placeholder="ツリーへ投稿..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, sendTreeMessage)"></textarea>
-        <button class="chat-action-btn" onclick="sendTreeMessage()">➤</button>
+        <button class="chat-action-btn" onclick="sendTreeMessage()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
     </div>
 </div>
 
@@ -175,7 +174,6 @@
 
         <div class="glass-card" style="padding: 15px; margin-bottom: 15px;">
             <h3 style="margin-top:0; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:5px;">🧠 AI 感情連動 (GPT-5.2)</h3>
-            <p style="font-size:0.8rem; opacity:0.8; margin-top:0;">※GPT-5.2が発言の感情を読み取り、フォントや文字サイズを自動で変化させます。</p>
             <div class="form-group">
                 <label>OpenAI APIキー (sk-...)</label>
                 <input type="password" id="setting-openai-key" placeholder="APIキーを入力" onchange="appData.openAiKey=this.value; saveData();">
@@ -190,6 +188,8 @@
                     <option value="default">クリアライト</option>
                     <option value="dark">ダークモード</option>
                     <option value="retro">レトロカフェ</option>
+                    <option value="cute">かわいい（ピンク）</option>
+                    <option value="glass">ガラス（透明感）</option>
                 </select>
             </div>
         </div>
@@ -225,6 +225,10 @@
             <img id="crop-target-img" class="crop-image">
             <div class="crop-mask"></div>
         </div>
+        <div style="display:flex; justify-content:center; gap: 10px; margin-bottom: 15px;">
+            <button onclick="zoomCrop(0.1)" style="flex:1; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); color:#333;">➕ 拡大</button>
+            <button onclick="zoomCrop(-0.1)" style="flex:1; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); color:#333;">➖ 縮小</button>
+        </div>
         <div style="display:flex; gap:10px;">
             <input type="file" id="icon-upload-input" accept="image/*" style="display:none;" onchange="handleIconUpload(this)">
             <button onclick="document.getElementById('icon-upload-input').click()" style="flex:1; padding:12px; background:rgba(0,0,0,0.1); color:#333; border-radius:10px; font-weight:bold; font-size:0.9rem;">写真を選ぶ</button>
@@ -245,7 +249,7 @@
     };
     
     let activeContactId = null;
-    let currentAttachedFile = null; // { dataBase64, name, isImage, size }
+    let currentAttachedFile = null; 
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB制限
 
     // ワークスペース状態
@@ -253,10 +257,7 @@
         canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
         tree:   { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
     };
-    
-    // ドラッグ＆ドロップ用
-    let activeNodeDrag = null;
-    let activeRotateHandle = null;
+    let activeNodeDrag = null; let activeRotateHandle = null;
 
     function loadData() {
         const backup = localStorage.getItem('node_canvas_chat_v1');
@@ -285,9 +286,10 @@
     window.onload = loadData;
 
     // ==========================================
-    // 🎨 UI操作・テーマ
+    // 🎨 UI操作・テーマ・タブ切替
     // ==========================================
     let currentTab = 'canvas';
+    
     function switchTab(id, tabElement) {
         document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -295,18 +297,37 @@
         tabElement.classList.add('active');
         document.getElementById(id).classList.add('active');
         
-        const highlight = document.getElementById('tab-highlight');
-        highlight.style.width = tabElement.offsetWidth + 'px';
-        highlight.style.transform = `translateX(${tabElement.offsetLeft - 5}px)`;
+        // テキスト幅が変わる可能性があるので少し遅延させてハイライトを追従
+        setTimeout(() => {
+            const highlight = document.getElementById('tab-highlight');
+            highlight.style.width = tabElement.offsetWidth + 'px';
+            highlight.style.transform = `translateX(${tabElement.offsetLeft - 5}px)`;
+        }, 30);
 
         currentTab = id.replace('tab-', '');
-        renderWorkspace(currentTab);
+        if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
+    }
+
+    // キャンバスタブ（接続ボタン兼用）のクリック処理
+    function handleCanvasTabClick(tabEl) {
+        const isConnected = conn && conn.open;
+        // すでに接続中 ＆ 現在キャンバスタブを見ている場合 → 切断確認
+        if (isConnected && tabEl.classList.contains('active')) {
+            if(confirm("通信を切断しますか？")) { disconnectP2P(false); }
+            return;
+        }
+        
+        switchTab('tab-canvas', tabEl);
+        
+        // 未接続ならポップアップを開く
+        if (!isConnected) {
+            openConnectModal();
+        }
     }
 
     function applyTheme() { document.body.setAttribute('data-theme', appData.theme); }
     function hardResetApp() { if(confirm("【⚠️警告】全履歴を消去します。よろしいですか？")) { localStorage.removeItem('node_canvas_chat_v1'); location.reload(); } }
     
-    // 入力欄制御
     function autoResize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight < 120 ? el.scrollHeight : 120) + 'px'; }
     function handleEnter(e, sendFunc) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFunc(); e.target.style.height = 'auto'; } }
 
@@ -325,7 +346,6 @@
             cropImg.onload = () => {
                 const imgEl = document.getElementById('crop-target-img');
                 imgEl.src = cropImg.src;
-                // 初期化
                 const container = document.getElementById('crop-container');
                 cropState.scale = Math.max(container.offsetWidth / cropImg.width, container.offsetHeight / cropImg.height);
                 cropState.panX = (container.offsetWidth - cropImg.width * cropState.scale) / 2;
@@ -341,13 +361,18 @@
         const imgEl = document.getElementById('crop-target-img');
         imgEl.style.transform = `translate(${cropState.panX}px, ${cropState.panY}px) scale(${cropState.scale})`;
     }
+    
+    function zoomCrop(delta) {
+        cropState.scale += delta;
+        if(cropState.scale < 0.1) cropState.scale = 0.1;
+        updateCropTransform();
+    }
 
-    // ドラッグ＆ズーム設定 (トリミング用)
     const cropCont = document.getElementById('crop-container');
     cropCont.onpointerdown = (e) => { cropState.isDragging = true; cropState.startX = e.clientX - cropState.panX; cropState.startY = e.clientY - cropState.panY; cropCont.setPointerCapture(e.pointerId); };
     cropCont.onpointermove = (e) => { if(cropState.isDragging){ cropState.panX = e.clientX - cropState.startX; cropState.panY = e.clientY - cropState.startY; updateCropTransform(); } };
     cropCont.onpointerup = (e) => { cropState.isDragging = false; cropCont.releasePointerCapture(e.pointerId); };
-    cropCont.onwheel = (e) => { e.preventDefault(); cropState.scale += e.deltaY > 0 ? -0.1 : 0.1; if(cropState.scale < 0.1) cropState.scale = 0.1; updateCropTransform(); };
+    cropCont.onwheel = (e) => { e.preventDefault(); zoomCrop(e.deltaY > 0 ? -0.1 : 0.1); };
 
     function commitCrop() {
         if(!cropImg.src) return document.getElementById('crop-modal').style.display='none';
@@ -355,7 +380,6 @@
         const size = 200; canvas.width = size; canvas.height = size;
         const cont = document.getElementById('crop-container');
         
-        // 中心点からの相対位置を計算して描画
         const cx = cont.offsetWidth/2; const cy = cont.offsetHeight/2;
         const drawX = cropState.panX - cx + size/2;
         const drawY = cropState.panY - cy + size/2;
@@ -368,7 +392,6 @@
         saveData();
         document.getElementById('crop-modal').style.display = 'none';
         
-        // アイコン変更を相手に通知
         if (conn && conn.open) { conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } }); }
     }
 
@@ -403,7 +426,7 @@
                     <img src="${contact.icon || ''}" style="width:36px; height:36px; border-radius:50%; background:#ccc; object-fit:cover;">
                     <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> <div style="font-size:0.7rem; opacity:0.6;">ID: ${id}</div></div>
                 </div>
-                <button onclick="connectToId('${id}')" style="padding:8px 15px; background:#4CAF50; color:white; font-weight:bold; border-radius:10px;">繋ぐ</button>
+                <button onclick="connectToId('${id}')" style="padding:6px 12px; background:#4CAF50; color:white; font-weight:bold; border-radius:10px;">繋ぐ</button>
             </div>`;
         });
     }
@@ -417,8 +440,8 @@
 
     function connectToId(targetId) {
         closeConnectModal();
-        const btn = document.getElementById('connection-status-btn');
-        btn.innerHTML = "通信中..."; btn.style.background = "#ff9800"; btn.style.color = "white";
+        const tabBtn = document.getElementById('tab-btn-canvas');
+        tabBtn.innerHTML = "通信中..."; 
         conn = peer.connect("ncchat-" + targetId, { reliable: true });
         setupP2PConnection(targetId);
         setTimeout(() => { if(conn && !conn.open) { disconnectP2P(); alert("接続タイムアウト。"); } }, 8000);
@@ -429,9 +452,18 @@
             activeContactId = targetId;
             if(!appData.contacts[targetId]) { appData.contacts[targetId] = { name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; saveData(); }
             
-            const btn = document.getElementById('connection-status-btn');
-            btn.innerHTML = `🟢 ${appData.contacts[targetId].name}`; btn.style.background = "#4CAF50"; btn.style.color = "white";
+            const tabBtn = document.getElementById('tab-btn-canvas');
+            tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[targetId].name})`; 
+            tabBtn.classList.add('connected');
             
+            // ハイライト幅の再調整
+            setTimeout(() => {
+                if(tabBtn.classList.contains('active')) {
+                    const highlight = document.getElementById('tab-highlight');
+                    highlight.style.width = tabBtn.offsetWidth + 'px';
+                }
+            }, 50);
+
             renderWorkspace('canvas'); renderWorkspace('tree');
             conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
         });
@@ -441,18 +473,18 @@
                 if(appData.contacts[activeContactId]) {
                     appData.contacts[activeContactId].name = data.payload.name;
                     if(data.payload.icon) appData.contacts[activeContactId].icon = data.payload.icon;
-                    document.getElementById('connection-status-btn').innerHTML = `🟢 ${data.payload.name}`;
+                    
+                    const tabBtn = document.getElementById('tab-btn-canvas');
+                    tabBtn.innerHTML = `🟢 接続中 (${data.payload.name})`;
                     saveData(); renderWorkspace(currentTab);
                 }
             } else if (data.type === 'new_node') {
-                // 受信処理 (アニメーション付き)
                 handleReceivedNode(data.payload);
             } else if (data.type === 'update_node') {
                 handleNodeUpdate(data.payload);
             } else if (data.type === 'delete_node') {
                 handleNodeDelete(data.payload.space, data.payload.id);
             } else if (data.type === 'request_ai_process') {
-                // AIキーを持っていない相手からAI処理を頼まれた場合
                 if(appData.openAiKey) {
                     const aiResult = await processEmotionAI(data.payload.text);
                     conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: aiResult } });
@@ -460,21 +492,31 @@
                     conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: null } });
                 }
             } else if (data.type === 'ai_process_result') {
-                // 頼んでいたAI結果が返ってきた場合 (Promise解決用イベント発火)
                 window.dispatchEvent(new CustomEvent(`ai_result_${data.payload.reqId}`, { detail: data.payload.aiData }));
             }
         });
 
-        conn.on('close', () => { disconnectP2P(); });
-        conn.on('error', () => { disconnectP2P(); });
+        conn.on('close', () => { disconnectP2P(true); });
+        conn.on('error', () => { disconnectP2P(true); });
     }
 
-    function disconnectP2P() {
+    function disconnectP2P(isRemote = false) {
         if(conn) { conn.close(); conn = null; }
         activeContactId = null;
-        const btn = document.getElementById('connection-status-btn');
-        btn.innerHTML = "未接続"; btn.style.background = "rgba(128,128,128,0.2)"; btn.style.color = "var(--text-color)";
-        renderWorkspace(currentTab); // 画面クリア
+        
+        const tabBtn = document.getElementById('tab-btn-canvas');
+        tabBtn.innerHTML = "🎨 キャンバス"; 
+        tabBtn.classList.remove('connected');
+        
+        setTimeout(() => {
+            if(tabBtn.classList.contains('active')) {
+                const highlight = document.getElementById('tab-highlight');
+                highlight.style.width = tabBtn.offsetWidth + 'px';
+            }
+        }, 50);
+
+        renderWorkspace(currentTab); 
+        // 相手にポップアップは出さず、そっと元に戻る
     }
 
     // --- ファイル進捗アニメーション ---
@@ -488,14 +530,13 @@
         
         reader.onload = (e) => {
             currentAttachedFile = { dataBase64: e.target.result, name: file.name, isImage: isImage };
-            document.getElementById('input-preview-content').innerHTML = isImage ? `<img src="${e.target.result}">` : `📎 ${file.name}`;
+            document.getElementById('input-preview-content').innerHTML = isImage ? `<img src="${e.target.result}" style="max-height:50px;border-radius:4px;">` : `📎 ${file.name}`;
             document.getElementById('input-preview-area').style.display = 'block';
         };
         reader.readAsDataURL(file);
     }
     function removeAttachedFile() { currentAttachedFile = null; document.getElementById('input-preview-area').style.display = 'none'; document.getElementById('file-input').value = ""; }
 
-    // 擬似的なパタパタ進捗アニメーションを生成
     function createProgressHTML(id) {
         return `<div class="file-progress-container" id="prog-${id}">
             <div class="loading-spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
@@ -512,7 +553,7 @@
             if(pct >= 100) { pct = 100; clearInterval(interval); setTimeout(callback, 200); }
             el.innerText = pct;
             el.parentElement.classList.remove('flip-anim');
-            void el.parentElement.offsetWidth; // reflow
+            void el.parentElement.offsetWidth; 
             el.parentElement.classList.add('flip-anim');
         }, 150);
     }
@@ -524,15 +565,13 @@
     async function processEmotionAI(text) {
         if (!text) return null;
         
-        // もし自分がキーを持っていなければ、相手に頼む（Promiseで待機）
         if (!appData.openAiKey) {
-            if(!conn || !conn.open) return null; // どちらも無理なら諦める
+            if(!conn || !conn.open) return null; 
             const reqId = Date.now().toString();
             return new Promise(resolve => {
                 const handler = (e) => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(e.detail); };
                 window.addEventListener(`ai_result_${reqId}`, handler);
                 conn.send({ type: 'request_ai_process', payload: { reqId, text } });
-                // 5秒待ってダメならタイムアウト
                 setTimeout(() => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(null); }, 5000);
             });
         }
@@ -560,7 +599,6 @@
         ['canvas', 'tree'].forEach(space => {
             const cont = document.getElementById(`${space}-workspace`);
             cont.onpointerdown = (e) => {
-                // ノードのドラッグ中はキャンバスを動かさない
                 if (e.target.closest('.chat-node') || e.target.closest('.rotate-handle')) return;
                 viewStates[space].isDragging = true;
                 viewStates[space].startX = e.clientX - viewStates[space].panX;
@@ -573,7 +611,6 @@
                     viewStates[space].panY = e.clientY - viewStates[space].startY;
                     updateWorkspaceTransform(space);
                 }
-                // ノードのドラッグ・回転処理
                 handleNodePointerMove(e, space);
             };
             cont.onpointerup = (e) => {
@@ -590,11 +627,11 @@
 
     function zoomWorkspace(delta, forceSpace = null) {
         const space = forceSpace || currentTab;
+        if(space !== 'canvas' && space !== 'tree') return;
         const vs = viewStates[space];
         const oldScale = vs.scale;
         vs.scale = Math.max(0.2, Math.min(3, vs.scale + delta));
         
-        // 中央基準でスケール
         const cont = document.getElementById(`${space}-workspace`);
         const cx = cont.offsetWidth / 2; const cy = cont.offsetHeight / 2;
         vs.panX = cx - (cx - vs.panX) * (vs.scale / oldScale);
@@ -606,10 +643,8 @@
     function updateWorkspaceTransform(space) {
         const layer = document.getElementById(`${space}-layer`);
         layer.style.transform = `translate(${viewStates[space].panX}px, ${viewStates[space].panY}px) scale(${viewStates[space].scale})`;
-        if(space === 'tree') drawTreeLines(); // パン・ズーム時は線の再描画不要（レイヤーごと動くため）だが念の為。
     }
 
-    // 画面中央のローカル座標を取得
     function getCenterCoordinates(space) {
         const cont = document.getElementById(`${space}-workspace`);
         const vs = viewStates[space];
@@ -621,13 +656,10 @@
     // ==========================================
     // 🎨 キャンバス / 🌳 ツリー 操作ロジック
     // ==========================================
-    
-    // --- ドラッグ ＆ 回転 ---
-    let dragStartPos = {x:0, y:0};
     function startNodeDrag(e, id, space) {
-        if(e.target.closest('.node-btn') || e.target.closest('.rotate-handle')) return;
+        if(e.target.closest('.node-btn') || e.target.closest('.rotate-handle') || e.target.closest('img') || e.target.closest('a')) return;
         const nodeObj = getContactData()[`${space}Nodes`].find(n => n.id === id);
-        if(!nodeObj || !nodeObj.isMine) return; // 自分の発言だけ動かせる
+        if(!nodeObj || !nodeObj.isMine) return; 
         
         activeNodeDrag = { id, space, nodeObj, startX: e.clientX, startY: e.clientY, initX: nodeObj.x, initY: nodeObj.y };
         e.stopPropagation();
@@ -655,7 +687,7 @@
         }
         else if (activeRotateHandle && activeRotateHandle.space === space) {
             const dx = e.clientX - activeRotateHandle.startX;
-            const newRot = activeRotateHandle.initRot + dx / 5; // 感度調整
+            const newRot = activeRotateHandle.initRot + dx / 5; 
             if(!activeRotateHandle.nodeObj.aiData) activeRotateHandle.nodeObj.aiData = {};
             activeRotateHandle.nodeObj.aiData.rotation = newRot;
             
@@ -667,7 +699,6 @@
     function handleNodePointerUp(e, space) {
         if (activeNodeDrag || activeRotateHandle) {
             saveData();
-            // 相手に更新を通知
             const targetObj = (activeNodeDrag || activeRotateHandle).nodeObj;
             if(conn && conn.open) conn.send({ type: 'update_node', payload: { space, node: targetObj } });
             activeNodeDrag = null; activeRotateHandle = null;
@@ -683,8 +714,6 @@
         if (!activeContactId) return alert('相手と接続してください');
 
         const aiData = await processEmotionAI(text);
-        
-        // キャンバスの中央付近に配置（ランダムに少しずらす）
         const center = getCenterCoordinates('canvas');
         center.x += (Math.random() - 0.5) * 100; center.y += (Math.random() - 0.5) * 100;
 
@@ -697,11 +726,9 @@
         contact.canvasNodes.push(newNode);
         
         inputEl.value = ''; removeAttachedFile(); saveData();
-        
-        // 描画と送信
         appendNodeToDOM(newNode, 'canvas');
+        
         if (file) {
-            // アニメーション後に画像をセット＆相手に送信
             animateProgress(newNode.id, () => {
                 replaceProgressWithFile(newNode, 'canvas');
                 if(conn && conn.open) conn.send({ type: 'new_node', payload: { space: 'canvas', node: newNode } });
@@ -711,7 +738,6 @@
         }
     }
 
-    // ツリー機能 (返信指定)
     let replyTargetId = null;
     function setTreeReply(id, name) {
         replyTargetId = id;
@@ -729,18 +755,15 @@
         const aiData = await processEmotionAI(text);
         const contact = getContactData();
         
-        // 親ノードの位置を基準に下に配置
-        let px = 5000, py = 5000; // 初期位置
+        let px = 5000, py = 5000; 
         if(replyTargetId) {
             const parent = contact.treeNodes.find(n => n.id === replyTargetId);
             if(parent) {
-                // 同じ親を持つ兄弟の数を数えてXをずらす
                 const siblings = contact.treeNodes.filter(n => n.parentId === replyTargetId).length;
                 px = parent.x + (siblings * 250) - 125;
                 py = parent.y + 150;
             }
         } else {
-            // ルートノードの場合は中央下部へ
             const center = getCenterCoordinates('tree');
             px = center.x; py = center.y + 150;
         }
@@ -790,18 +813,16 @@
         el.className = `chat-node ${node.isMine ? 'mine' : 'theirs'}`;
         el.id = `node-${space}-${node.id}`;
         
-        // エモーショナルタイポグラフィの適用
         const ai = node.aiData || {};
         const font = ai.fontFamily || 'inherit';
         const scale = ai.scale || 1.0;
-        const color = ai.color || (node.isMine ? '#000' : '#333');
+        const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
         const rot = ai.rotation || 0;
         
         el.style.left = `${node.x}px`;
         el.style.top = `${node.y}px`;
         el.style.transform = `rotate(${rot}deg)`;
         
-        // 相手の名前とアイコン
         const senderName = node.isMine ? appData.userName : (getContactData().name || '相手');
         const senderIcon = node.isMine ? appData.userIcon : (getContactData().icon || '');
 
@@ -812,33 +833,28 @@
         }
         
         if (node.file) {
-            // 進捗アニメーション用の仮要素か、実画像か
             if (node.file._isUploading) {
                 contentHtml += createProgressHTML(node.id);
             } else if (node.file.isImage) {
-                contentHtml += `<img class="node-image" src="${node.file.dataBase64}" onclick="openImageViewer('${node.file.dataBase64}', '${node.file.name}')" style="pointer-events:auto; cursor:pointer;">`;
+                contentHtml += `<img class="node-image" src="${node.file.dataBase64}" onclick="window.open('${node.file.dataBase64}', '_blank')" style="pointer-events:auto; cursor:pointer;">`;
             } else {
                 contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; background:rgba(0,0,0,0.05); padding:8px; border-radius:8px; display:inline-block; margin-top:5px; text-decoration:none; color:inherit; font-weight:bold;">📎 ${node.file.name} を保存</a>`;
             }
         }
         
-        // コントロールボタン
         let controlsHtml = `<div class="node-controls">`;
         if (space === 'tree') {
             controlsHtml += `<div class="node-btn" onclick="setTreeReply('${node.id}', '${senderName}')">↩️</div>`;
         }
         controlsHtml += `<div class="node-btn del" onclick="deleteNodeUI('${node.id}', '${space}')">✖</div></div>`;
         
-        // キャンバス用回転ハンドル
         let handleHtml = space === 'canvas' && node.isMine ? `<div class="rotate-handle" onpointerdown="startNodeRotate(event, '${node.id}', '${space}')">↻</div>` : '';
         
         el.innerHTML = controlsHtml + contentHtml + handleHtml;
         
-        // ドラッグイベント (自分のノードのみ)
         if (node.isMine) {
             el.onpointerdown = (e) => startNodeDrag(e, node.id, space);
         }
-        
         layer.appendChild(el);
     }
 
@@ -848,13 +864,12 @@
         if(el) { el.remove(); appendNodeToDOM(node, space); }
     }
 
-    // --- 受信処理 ---
+    // --- 受信・更新・削除 ---
     function handleReceivedNode(payload) {
         const { space, node } = payload;
         const contact = getContactData();
         node.isMine = false;
         
-        // 相手側が巨大ファイルを送ってきた場合もパタパタ表示
         if (node.file) {
             node.file._isUploading = true;
             contact[`${space}Nodes`].push(node);
@@ -878,7 +893,7 @@
         const contact = getContactData();
         const idx = contact[`${space}Nodes`].findIndex(n => n.id === node.id);
         if(idx !== -1) {
-            node.isMine = false; // 相手からの更新なので
+            node.isMine = false; 
             contact[`${space}Nodes`][idx] = node;
             saveData();
             
@@ -891,7 +906,6 @@
         }
     }
 
-    // --- 削除ロジック ---
     function deleteNodeUI(id, space) {
         if(!confirm('このメッセージを削除しますか？\n(相手の画面からも消えます)')) return;
         handleNodeDelete(space, id);
@@ -902,11 +916,7 @@
         const contact = getContactData();
         if(!contact) return;
         contact[`${space}Nodes`] = contact[`${space}Nodes`].filter(n => n.id !== id);
-        
-        // ツリーの場合は子ノードの親参照をnullにして孤立させる(または連鎖削除。今回は孤立させる)
-        if(space === 'tree') {
-            contact.treeNodes.forEach(n => { if(n.parentId === id) n.parentId = null; });
-        }
+        if(space === 'tree') { contact.treeNodes.forEach(n => { if(n.parentId === id) n.parentId = null; }); }
         
         saveData();
         const el = document.getElementById(`node-${space}-${id}`);
@@ -914,7 +924,6 @@
         if(space==='tree') drawTreeLines();
     }
 
-    // --- ツリー結線描画 ---
     function drawTreeLines() {
         if(currentTab !== 'tree' || !activeContactId) return;
         const svg = document.getElementById('tree-svg-layer');
@@ -926,21 +935,16 @@
             if(n.parentId) {
                 const parent = nodes.find(p => p.id === n.parentId);
                 if(parent) {
-                    // ノードの中心同士を結ぶ
                     const px = parent.x + 50; const py = parent.y + 40;
                     const cx = n.x + 50; const cy = n.y + 40;
-                    
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    // ベジェ曲線で滑らかに
                     const d = `M ${px},${py} C ${px},${(py+cy)/2} ${cx},${(py+cy)/2} ${cx},${cy}`;
-                    path.setAttribute('d', d);
-                    path.setAttribute('class', 'tree-line');
+                    path.setAttribute('d', d); path.setAttribute('class', 'tree-line');
                     svg.appendChild(path);
                 }
             }
         });
     }
-
 </script>
 
 </body>
