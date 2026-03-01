@@ -35,6 +35,7 @@
         .tab { flex: 1; text-align: center; padding: 10px 0; color: var(--text-color); opacity: 0.6; font-weight: 900; font-size: 0.85rem; border-radius: 12px; cursor: pointer; position: relative; z-index: 2; transition: all 0.3s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tab.active { opacity: 1; color: #fff; }
         .tab.connected { background: #4CAF50 !important; color: white !important; opacity: 1; animation: pulse 2s infinite; }
+        .tab.offline { background: #9e9e9e !important; color: white !important; opacity: 1; }
         .tab-highlight { position: absolute; top: 5px; bottom: 5px; left: 5px; width: 0; background: var(--accent-color); border-radius: 12px; z-index: 1; transition: transform 0.3s, width 0.3s; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
 
@@ -49,10 +50,10 @@
         
         .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.65; pointer-events: none; transition: opacity 0.3s; }
         
-        /* 🧠 AI話題まとめパネル (より透明に、枠を縮める) */
+        /* 🧠 AI話題まとめパネル */
         .ai-summary-panel { 
             position: absolute; top: 15px; right: 15px; z-index: 500; 
-            background: rgba(255, 255, 255, 0.15); /* 透かしを強く */
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(2px); 
             padding: 12px 16px; border-radius: 16px; 
             width: fit-content; max-width: 240px; 
@@ -93,14 +94,12 @@
         .text-collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .text-full { display: block; }
 
-        /* --- ツリー用ノード（シンプルなスレッド形式） --- */
+        /* --- ツリー用ノード --- */
         .tree-node { position: absolute; background: transparent; padding: 0; min-width: 50px; max-width: 280px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.4s ease, top 0.4s ease; }
         .tree-node-name { display: flex; align-items: center; font-size: 0.65rem; color: #888; margin-bottom: 2px; font-weight: bold; pointer-events: none; white-space: nowrap; }
         
         .tree-node-content { display: inline-block; border-bottom: 2px solid var(--accent-color); padding-bottom: 2px; cursor: pointer; pointer-events: auto; position: relative; }
         .tree-node.mine .tree-node-content { border-bottom-color: #007aff; }
-        
-        /* 展開可能（長文）な場合の特別な下線スタイル */
         .tree-node-content.expandable { border-bottom: 3px dashed #ff9800 !important; }
 
         .tree-node-text { font-size: 0.95rem; font-weight: bold; color: var(--text-color); line-height: 1.3; word-break: break-word; }
@@ -162,7 +161,7 @@
 
 <div id="tab-canvas" class="tab-content active">
     <div class="online-indicator" id="online-indicator-canvas">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 オンライン</div>
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 接続状況</div>
         <div id="online-list-canvas" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
     <div class="ai-summary-panel" id="canvas-summary-panel" style="display:none;">
@@ -195,7 +194,7 @@
 
 <div id="tab-tree" class="tab-content">
     <div class="online-indicator" id="online-indicator-tree">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 オンライン</div>
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 接続状況</div>
         <div id="online-list-tree" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
     <div class="ai-summary-panel" id="tree-summary-panel" style="display:none;">
@@ -321,7 +320,11 @@
     let targetPanCoords = null; 
     let linkingSourceId = null;
     let activeTreeRootId = null; 
-    let currentAttachedFile = null; // 添付ファイル保持用
+    let currentAttachedFile = null; 
+    
+    // オフライン・リアルタイム検知用
+    let heartbeatTimer = null;
+    let connectionStatus = {};
 
     const viewStates = {
         canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
@@ -381,6 +384,7 @@
         applyTheme();
         initP2P();
         initWorkspaces();
+        startHeartbeat(); // リアルタイム監視開始
         
         const activeTab = document.querySelector('.tab.active');
         if(activeTab) {
@@ -478,8 +482,17 @@
     function updateTabUI() {
         const tabBtn = document.getElementById('tab-btn-canvas');
         if(activeContactId && appData.contacts[activeContactId]) {
-            tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[activeContactId].name})`; 
-            tabBtn.classList.add('connected');
+            const isOnline = connectionStatus[activeContactId] && connectionStatus[activeContactId].isOnline;
+            if (isOnline) {
+                tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[activeContactId].name})`; 
+                tabBtn.classList.add('connected');
+                tabBtn.classList.remove('offline');
+            } else {
+                tabBtn.innerHTML = `🔴 オフライン (${appData.contacts[activeContactId].name})`; 
+                tabBtn.classList.remove('connected');
+                tabBtn.classList.add('offline');
+            }
+            
             document.getElementById('btn-clear-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
             
@@ -491,7 +504,7 @@
             }
         } else {
             tabBtn.innerHTML = "🎨 キャンバス"; 
-            tabBtn.classList.remove('connected');
+            tabBtn.classList.remove('connected', 'offline');
             document.getElementById('btn-clear-canvas').style.display = 'none';
             document.getElementById('btn-manage-tree').style.display = 'none';
             document.querySelectorAll('.ai-summary-panel').forEach(el => el.style.display = 'none');
@@ -534,7 +547,7 @@
         document.getElementById('global-input-preview-area').style.display = 'none';
     }
 
-    // --- P2P & 履歴閲覧 ---
+    // --- P2P & 履歴閲覧 & 同期ロジック ---
     let peer = null;
 
     function initP2P() {
@@ -543,6 +556,34 @@
             const targetId = connection.peer.replace("ncchat2-", "");
             setupP2PConnection(targetId, connection, false);
         });
+    }
+
+    // リアルタイムオンライン検知
+    function startHeartbeat() {
+        if (heartbeatTimer) return;
+        heartbeatTimer = setInterval(() => {
+            const now = Date.now();
+            Object.keys(activeConnections).forEach(targetId => {
+                const conn = activeConnections[targetId];
+                const status = connectionStatus[targetId];
+                
+                if (conn && conn.open) {
+                    conn.send({ type: 'ping' });
+                    // 10秒応答がなければオフライン
+                    if (status && (now - status.lastPong > 10000)) {
+                        if (status.isOnline) {
+                            status.isOnline = false;
+                            updateOnlineIndicator();
+                        }
+                    }
+                } else {
+                    if (status && status.isOnline) {
+                        status.isOnline = false;
+                        updateOnlineIndicator();
+                    }
+                }
+            });
+        }, 3000);
     }
 
     function openConnectModal() {
@@ -556,12 +597,12 @@
         const list = document.getElementById('contacts-list'); list.innerHTML = '';
         Object.keys(appData.contacts).forEach(id => {
             const contact = appData.contacts[id];
-            const isOnline = activeConnections[id] && activeConnections[id].open;
+            const isOnline = connectionStatus[id] && connectionStatus[id].isOnline;
             list.innerHTML += `
             <div class="contact-item">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <img src="${contact.icon || ''}" style="width:36px; height:36px; border-radius:50%; background:#ccc; object-fit:cover;">
-                    <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> ${isOnline ? '<span style="color:#4CAF50; font-size:0.7rem;">(オンライン)</span>' : ''}</div>
+                    <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> ${isOnline ? '<span style="color:#4CAF50; font-size:0.7rem;">(オンライン)</span>' : '<span style="color:#9e9e9e; font-size:0.7rem;">(オフライン)</span>'}</div>
                 </div>
                 <button onclick="openContactHistory('${id}')" style="padding:6px 12px; background:#2196F3; color:white; font-weight:bold; border-radius:10px;">履歴 / 繋ぐ</button>
             </div>`;
@@ -580,6 +621,8 @@
         activeContactId = targetId; 
         if(!appData.contacts[targetId]) { appData.contacts[targetId] = { name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; saveData(); }
         
+        if (!connectionStatus[targetId]) connectionStatus[targetId] = { lastPong: 0, isOnline: false };
+        
         updateTabUI(); 
         renderWorkspace(currentTab);
         
@@ -589,15 +632,84 @@
         }
     }
 
+    // オフライン間のデータ同期処理
+    function initiateSync(targetId) {
+        const contact = appData.contacts[targetId];
+        if (!contact) return;
+        const conn = activeConnections[targetId];
+        if(conn && conn.open) {
+            // IDリストを送って差分チェックを要求
+            const myCanvasKeys = (contact.canvasNodes || []).map(n => ({ id: n.id }));
+            const myTreeKeys = (contact.treeNodes || []).map(n => ({ id: n.id }));
+            conn.send({ type: 'sync_check', payload: { canvas: myCanvasKeys, tree: myTreeKeys } });
+        }
+    }
+
+    function handleSyncMerged(targetId) {
+        saveData();
+        rearrangeCanvasNodes(targetId); // キャンバスの重なりを解消
+        
+        if(activeContactId === targetId) {
+            renderWorkspace('canvas');
+            renderWorkspace('tree');
+            refreshCanvasSummaryAI(targetId);
+            if(activeTreeRootId) refreshTreeSummaryAI(targetId, activeTreeRootId);
+        }
+    }
+
+    function rearrangeCanvasNodes(targetId) {
+        const contact = appData.contacts[targetId];
+        if(!contact || !contact.canvasNodes) return;
+        
+        let changed = false;
+        const nodes = contact.canvasNodes;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const n1 = nodes[i];
+                const n2 = nodes[j];
+                // 同じ親、または両方親なしの場合で距離が近すぎる場合は散らす
+                if (n1.parentId === n2.parentId) {
+                    const dist = Math.hypot((n1.x||0) - (n2.x||0), (n1.y||0) - (n2.y||0));
+                    if (dist < 80) { 
+                        const angle = Math.random() * Math.PI * 2;
+                        n2.x = (n2.x||0) + Math.cos(angle) * 150;
+                        n2.y = (n2.y||0) + Math.sin(angle) * 150;
+                        changed = true;
+                    }
+                }
+            }
+        }
+        if(changed) saveData();
+    }
+
     function setupP2PConnection(targetId, conn, isInitiator) {
         conn.on('open', () => {
             activeConnections[targetId] = conn;
+            connectionStatus[targetId] = { lastPong: Date.now(), isOnline: true };
             updateOnlineIndicator();
             conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
+            
+            initiateSync(targetId); // 接続確立時に同期開始
             if (activeContactId === targetId) { updateTabUI(); }
         });
 
         conn.on('data', async (data) => {
+            if (data.type === 'ping') {
+                conn.send({ type: 'pong' });
+                return;
+            }
+            if (data.type === 'pong') {
+                if(connectionStatus[targetId]) {
+                    connectionStatus[targetId].lastPong = Date.now();
+                    if (!connectionStatus[targetId].isOnline) {
+                        connectionStatus[targetId].isOnline = true;
+                        updateOnlineIndicator();
+                        initiateSync(targetId); // 復帰時に同期
+                    }
+                }
+                return;
+            }
+            
             if (data.type === 'system_info') {
                 if(appData.contacts[targetId]) {
                     appData.contacts[targetId].name = data.payload.name;
@@ -640,22 +752,83 @@
                     if(tNode) { tNode.isCollapsed = data.payload.isCollapsed; saveData(); if(activeContactId === targetId && currentTab === 'tree') renderWorkspace('tree'); }
                 }
             }
+            // 同期関連メッセージ
+            else if (data.type === 'sync_check') {
+                const contact = appData.contacts[targetId];
+                if (!contact) return;
+                
+                const theirCanvasIds = (data.payload.canvas || []).map(k => k.id);
+                const theirTreeIds = (data.payload.tree || []).map(k => k.id);
+                
+                const myCanvas = contact.canvasNodes || [];
+                const myTree = contact.treeNodes || [];
+                
+                const pushCanvas = myCanvas.filter(n => !theirCanvasIds.includes(n.id));
+                const pushTree = myTree.filter(n => !theirTreeIds.includes(n.id));
+                
+                const myCanvasIds = myCanvas.map(n => n.id);
+                const myTreeIds = myTree.map(n => n.id);
+                
+                const pullCanvasIds = (data.payload.canvas || []).filter(k => !myCanvasIds.includes(k.id)).map(k => k.id);
+                const pullTreeIds = (data.payload.tree || []).filter(k => !myTreeIds.includes(k.id)).map(k => k.id);
+                
+                conn.send({ type: 'sync_diff', payload: { pushCanvas, pushTree, pullCanvasIds, pullTreeIds }});
+            }
+            else if (data.type === 'sync_diff') {
+                const { pushCanvas, pushTree, pullCanvasIds, pullTreeIds } = data.payload;
+                const contact = appData.contacts[targetId];
+                let hasMerged = false;
+                
+                if (pushCanvas && pushCanvas.length > 0) {
+                    contact.canvasNodes.push(...pushCanvas.map(n => ({...n, isMine: false})));
+                    hasMerged = true;
+                }
+                if (pushTree && pushTree.length > 0) {
+                    contact.treeNodes.push(...pushTree.map(n => ({...n, isMine: false})));
+                    hasMerged = true;
+                }
+                
+                const myCanvas = contact.canvasNodes || [];
+                const myTree = contact.treeNodes || [];
+                const sendCanvas = myCanvas.filter(n => pullCanvasIds.includes(n.id));
+                const sendTree = myTree.filter(n => pullTreeIds.includes(n.id));
+                
+                if (sendCanvas.length > 0 || sendTree.length > 0) {
+                    conn.send({ type: 'sync_push', payload: { pushCanvas: sendCanvas, pushTree: sendTree } });
+                }
+                if (hasMerged) handleSyncMerged(targetId);
+            }
+            else if (data.type === 'sync_push') {
+                const { pushCanvas, pushTree } = data.payload;
+                const contact = appData.contacts[targetId];
+                let hasMerged = false;
+                if (pushCanvas && pushCanvas.length > 0) {
+                    contact.canvasNodes.push(...pushCanvas.map(n => ({...n, isMine: false})));
+                    hasMerged = true;
+                }
+                if (pushTree && pushTree.length > 0) {
+                    contact.treeNodes.push(...pushTree.map(n => ({...n, isMine: false})));
+                    hasMerged = true;
+                }
+                if (hasMerged) handleSyncMerged(targetId);
+            }
         });
         conn.on('close', () => { handleDisconnect(targetId); });
         conn.on('error', () => { handleDisconnect(targetId); });
     }
 
     function handleDisconnect(targetId) {
-        if(activeConnections[targetId]) delete activeConnections[targetId];
+        if(connectionStatus[targetId]) connectionStatus[targetId].isOnline = false;
         updateOnlineIndicator();
     }
 
     function updateOnlineIndicator() {
-        const listHtml = Object.keys(activeConnections)
-            .filter(id => activeConnections[id].open)
+        const listHtml = Object.keys(appData.contacts)
+            .filter(id => connectionStatus[id] && connectionStatus[id].isOnline)
             .map(id => `<div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;"><span style="color:#4CAF50; font-size:14px;">●</span> ${appData.contacts[id]?.name || id}</div>`).join('');
         const finalHtml = listHtml || '<div style="opacity:0.6;">(誰もいません)</div>';
         document.getElementById('online-list-canvas').innerHTML = finalHtml; document.getElementById('online-list-tree').innerHTML = finalHtml;
+        if(activeContactId) updateTabUI(); // タブの文字も更新
     }
 
     function autoCropAndSaveIcon(input) {
@@ -872,7 +1045,6 @@
         }
     }
 
-    // 両画面対応のリプライターゲット
     let replyTargetId = null;
     function setReplyTarget(id, name, space) {
         replyTargetId = id;
@@ -950,6 +1122,7 @@
         }
     }
 
+    // 重ならない座標の計算 (キャンバス用)
     function getNonOverlappingCanvasPos(parentId, contactNodes) {
         const parent = contactNodes.find(n => n.id === parentId);
         if(!parent) return {x: 0, y: 0};
@@ -989,7 +1162,6 @@
                 return;
             }
             
-            // データ構造の安全確保
             if (!appData.contacts[activeContactId]) {
                 appData.contacts[activeContactId] = { name: "ID:"+activeContactId, icon: "", canvasNodes: [], treeNodes: [] };
             }
@@ -1000,7 +1172,6 @@
             const id = Date.now().toString();
             const passedReplyId = replyTargetId;
 
-            // キャンバスの配置決定
             let cx = 0, cy = 0;
             if (sourceSpace === 'canvas') {
                 if (passedReplyId) {
@@ -1039,7 +1210,7 @@
                 conn.send({ type: 'new_node', payload: { space: 'tree', node: treeNode } });
             }
 
-            // AI解析はバックグラウンドで実行（画面フリーズ防止）
+            // AI解析はバックグラウンドで実行
             processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
             
         } catch (error) {
@@ -1123,7 +1294,6 @@
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
                 layout[node.id] = { x: startX + (depth * 60), y: currentY };
-                // 画像付きノードは高さを広めに取る
                 currentY += (node.file && node.file.isImage) ? 140 : 80;
                 
                 if(!node.isCollapsed) {
@@ -1308,7 +1478,7 @@
         x = dx > 0 ? Math.abs(x) : -Math.abs(x);
         y = dy > 0 ? Math.abs(y) : -Math.abs(y);
         
-        const margin = 14; // ドットのサイズ分マージンを取る
+        const margin = 14; 
         const len = Math.hypot(x, y);
         x += (x/len) * margin; y += (y/len) * margin;
         return {x, y};
@@ -1321,7 +1491,6 @@
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
 
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        // 丸(ドット)のマーカー
         defs.innerHTML = `<marker id="dot-canvas" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"><circle cx="5" cy="5" r="4" fill="rgba(0, 122, 255, 0.8)" /></marker>`;
         svg.appendChild(defs);
         
@@ -1364,7 +1533,6 @@
 
     // --- ツリーの線（文字と被るので無効化） ---
     function drawTreeLines(visibleNodes) {
-        // ツリー側は縦にスレッド表示されるため線は引きません
         const svg = document.getElementById('tree-svg-layer');
         if(svg) { while (svg.firstChild) { svg.removeChild(svg.firstChild); } }
     }
