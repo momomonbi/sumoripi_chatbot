@@ -14,7 +14,7 @@
         [data-theme="cute"] { --bg-color: #fff0f5; --header-bg: rgba(255, 182, 193, 0.95); --accent-color: #ff69b4; --text-color: #5d4037; --app-font: 'M PLUS Rounded 1c', sans-serif; --card-bg: rgba(255, 255, 255, 0.8); }
         [data-theme="glass"] { --bg-color: #e8f4f8; --header-bg: rgba(255, 255, 255, 0.4); --accent-color: #40c0cb; --text-color: #2c5263; --app-font: 'Noto Sans JP', sans-serif; --card-bg: rgba(255, 255, 255, 0.5); }
 
-        /* * iOS対応: position: fixedで画面全体を完全固定し、スクロール崩れを防ぐ */
+        /* iOS対応: position: fixedで画面全体を完全固定 */
         body { 
             font-family: var(--app-font); margin: 0; padding: 0; 
             background-color: var(--bg-color); color: var(--text-color); 
@@ -56,33 +56,35 @@
         .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.65; pointer-events: none; transition: opacity 0.3s; }
         .online-indicator:hover { opacity: 1; pointer-events: auto; }
         
+        /* ツリー AIまとめボックス */
+        .tree-summary-box { position: absolute; bottom: 20px; right: 20px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(15px); padding: 12px 15px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3); max-width: 200px; font-size: 0.8rem; line-height: 1.4; color: var(--text-color); display: none; flex-direction: column; gap: 5px; }
+        .summary-title { font-size: 0.7rem; font-weight: 900; color: var(--accent-color); border-bottom: 1px solid rgba(128,128,128,0.2); padding-bottom: 3px; }
+
         /* チャットノード */
         .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 120px; max-width: 300px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
+        .chat-node.tree-node { transition: all 0.5s ease; pointer-events: none; } /* ツリーは操作不可・アニメーション移動 */
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
         
-        /* 移動モード時のスタイル */
+        /* 移動モード時のスタイル (キャンバスのみ) */
         .chat-node.move-mode { border: 2px dashed var(--accent-color); z-index: 200 !important; }
-        .move-handle { display: none; position: absolute; top: -15px; left: -15px; width: 36px; height: 36px; background: var(--accent-color); color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 201; cursor: grab; }
+        .move-handle { display: none; position: absolute; top: -15px; left: -15px; width: 36px; height: 36px; background: var(--accent-color); color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 201; cursor: grab; }
         .chat-node.move-mode .move-handle { display: flex; }
         .move-handle:active { cursor: grabbing; transform: scale(1.1); }
 
-        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; }
+        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
         .node-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #ccc; border: 1px solid rgba(0,0,0,0.1); }
-        .node-body { padding: 10px 15px 0 15px; cursor: pointer; }
+        .node-body { padding: 10px 15px 0 15px; cursor: pointer; pointer-events: auto; }
         .node-text { line-height: 1.4; word-break: break-word; pointer-events: none; }
         .node-image { max-width: 100%; border-radius: 12px; margin-top: 5px; pointer-events: auto; }
-        
-        .node-controls { position: absolute; top: -15px; right: -10px; display: none; gap: 5px; background: rgba(0,0,0,0.6); padding: 4px; border-radius: 10px; z-index: 101; }
-        .chat-node:hover .node-controls, .chat-node:active .node-controls { display: flex; }
-        .node-btn { background: #fff; color: #333; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
-        .node-btn.del { color: #f44336; }
 
         /* 入力バー */
         .chat-controls-bar { display: flex; gap: 6px; align-items: flex-end; padding: 10px; background: var(--header-bg); border-top: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(15px); }
         .chat-input { flex-grow: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid rgba(128,128,128,0.3); font-size: 1rem; resize: none; min-height: 44px; max-height: 120px; background: rgba(255,255,255,0.9); line-height: 1.4; color: #333; }
         .chat-action-btn { background: var(--accent-color); color: white; border-radius: 50%; width: 44px; height: 44px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         
+        .reply-indicator { display: none; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(0, 122, 255, 0.1); color: var(--accent-color); font-size: 0.85rem; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); }
+
         /* --- モーダル・ポップアップ --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-content { background: #fff; color: #333; width: 100%; max-width: 360px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; max-height: 85vh; overflow-y: auto; }
@@ -103,7 +105,8 @@
     <div class="app-header">
         <h1 id="app-title-display">Node Canvas Chat</h1>
         <div style="display: flex; gap: 6px;">
-            <button onclick="resetWorkspaceView()" style="padding:8px 15px; background:rgba(128,128,128,0.15); border-radius:10px; font-weight:bold; color:var(--text-color);">🏠 画面リセット</button>
+            <button onclick="resetWorkspaceView()" style="padding:8px 12px; background:rgba(128,128,128,0.15); border-radius:10px; font-weight:bold; color:var(--text-color); font-size:0.8rem;">🏠 視点リセット</button>
+            <button id="btn-clear-canvas" onclick="clearCanvasCommand()" style="padding:8px 12px; background:rgba(244,67,54,0.15); border-radius:10px; font-weight:bold; color:#f44336; font-size:0.8rem; display:none;">🗑️ キャンバス消去</button>
         </div>
     </div>
 
@@ -125,6 +128,11 @@
         <div class="workspace-layer" id="canvas-layer"></div>
     </div>
     
+    <div class="reply-indicator" id="canvas-reply-indicator">
+        <span>↪️ <span id="canvas-reply-target-name"></span> に返信中...</span>
+        <button onclick="cancelReply('canvas')" style="background:transparent; color:var(--accent-color); font-weight:bold; font-size:1.2rem;">✖</button>
+    </div>
+
     <div class="chat-controls-bar">
         <input type="file" id="file-input-canvas" style="display:none;" onchange="handleFileSelect(this)">
         <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input-canvas').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
@@ -141,6 +149,11 @@
         <div id="online-list-tree" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
 
+    <div class="tree-summary-box" id="tree-summary-box">
+        <div class="summary-title">🤖 AI 会話まとめ</div>
+        <div id="tree-summary-text">要約を待機中...</div>
+    </div>
+
     <div class="workspace-container" id="tree-workspace">
         <div class="workspace-layer" id="tree-layer">
             <svg id="tree-svg-layer" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:0; left:0; width:10000px; height:10000px; pointer-events:none; z-index:0;"></svg>
@@ -151,7 +164,7 @@
     <div class="chat-controls-bar">
         <input type="file" id="file-input-tree" style="display:none;" onchange="handleFileSelect(this)">
         <button class="chat-action-btn file-attach-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
-        <textarea id="tree-input-text" class="chat-input" placeholder="メッセージ (自動でツリー配置)..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
+        <textarea id="tree-input-text" class="chat-input" placeholder="メッセージ (自動でツリー整頓配置)..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('tree')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
@@ -282,6 +295,8 @@
         }, 30);
 
         currentTab = id.replace('tab-', '');
+        document.getElementById('btn-clear-canvas').style.display = currentTab === 'canvas' && activeContactId ? 'block' : 'none';
+        
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
     }
 
@@ -291,6 +306,7 @@
                 activeContactId = null;
                 updateTabUI();
                 renderWorkspace(currentTab); 
+                document.getElementById('btn-clear-canvas').style.display = 'none';
             }
             return;
         }
@@ -307,11 +323,13 @@
     function updateTabUI() {
         const tabBtn = document.getElementById('tab-btn-canvas');
         if(activeContactId && appData.contacts[activeContactId]) {
-            tabBtn.innerHTML = `🟢 接続中 (${appData.contacts[activeContactId].name})`; 
+            tabBtn.innerHTML = `🟢 接続 (${appData.contacts[activeContactId].name})`; 
             tabBtn.classList.add('connected');
+            if(currentTab === 'canvas') document.getElementById('btn-clear-canvas').style.display = 'block';
         } else {
             tabBtn.innerHTML = "🎨 キャンバス"; 
             tabBtn.classList.remove('connected');
+            document.getElementById('btn-clear-canvas').style.display = 'none';
         }
         setTimeout(() => {
             if(tabBtn.classList.contains('active')) {
@@ -414,14 +432,16 @@
                 handleReceivedNode(targetId, data.payload);
             } else if (data.type === 'update_node') {
                 handleNodeUpdate(targetId, data.payload);
-            } else if (data.type === 'delete_node') {
-                handleNodeDelete(targetId, data.payload.space, data.payload.id);
+            } else if (data.type === 'clear_canvas') {
+                handleClearCanvasNetwork(targetId);
+            } else if (data.type === 'update_tree_summary') {
+                if (activeContactId === targetId) updateTreeSummaryUI(data.payload);
             } else if (data.type === 'request_ai_process') {
                 if(appData.openAiKey) {
                     const aiResult = await processEmotionAI(data.payload.text, targetId); 
                     conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: aiResult } });
                 } else {
-                    conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: null } });
+                    conn.send({ type: 'ai_process_result', payload: { reqId: data.payload.reqId, aiData: { parentId: null } } });
                 }
             } else if (data.type === 'ai_process_result') {
                 window.dispatchEvent(new CustomEvent(`ai_result_${data.payload.reqId}`, { detail: data.payload.aiData }));
@@ -463,23 +483,15 @@
                 const size = 150; canvas.width = size; canvas.height = size;
                 const ctx = canvas.getContext('2d');
                 
-                // 丸くクリップ
-                ctx.beginPath();
-                ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
-                ctx.closePath();
-                ctx.clip();
-                
-                // 中央を切り抜いて描画
+                ctx.beginPath(); ctx.arc(size/2, size/2, size/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
                 const minDim = Math.min(img.width, img.height);
-                const sx = (img.width - minDim) / 2;
-                const sy = (img.height - minDim) / 2;
+                const sx = (img.width - minDim) / 2; const sy = (img.height - minDim) / 2;
                 ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
                 
                 appData.userIcon = canvas.toDataURL('image/jpeg', 0.8);
                 document.getElementById('profile-icon-preview').src = appData.userIcon;
                 saveData();
                 
-                // 接続中の相手に即座に反映
                 Object.keys(activeConnections).forEach(id => {
                     const conn = activeConnections[id];
                     if(conn && conn.open) conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
@@ -488,9 +500,8 @@
             img.src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
-        input.value = ""; // リセット
+        input.value = ""; 
     }
-
 
     // ==========================================
     // 🌌 無限ワークスペース (移動のみ、ズーム禁止)
@@ -500,9 +511,13 @@
             const cont = document.getElementById(`${space}-workspace`);
             
             cont.onpointerdown = (e) => {
-                // ノードや操作ボタンのタップなら画面移動はしない
                 if (e.target.closest('.chat-node') || e.target.closest('.move-handle')) return;
                 
+                // 背景クリックでキャンバスの移動モード解除
+                if(space === 'canvas') {
+                    document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
+                }
+
                 viewStates[space].isDragging = true;
                 viewStates[space].startX = e.clientX - viewStates[space].panX;
                 viewStates[space].startY = e.clientY - viewStates[space].panY;
@@ -515,13 +530,13 @@
                     viewStates[space].panY = e.clientY - viewStates[space].startY;
                     updateWorkspaceTransform(space);
                 }
-                handleNodePointerMove(e, space); // ノード移動処理
+                handleNodePointerMove(e, space); // ノードドラッグ処理
             };
 
             const pointerUpHandler = (e) => {
                 viewStates[space].isDragging = false;
                 cont.releasePointerCapture(e.pointerId);
-                handleNodePointerUp(e, space); // ノード移動終了処理
+                handleNodePointerUp(e, space); // ノードドラッグ終了処理
             };
 
             cont.onpointerup = pointerUpHandler;
@@ -552,33 +567,52 @@
     // 🎨 キャンバス / 🌳 ツリー 操作ロジック
     // ==========================================
     let activeNodeDrag = null;
+    let lastTapTime = 0;
+    let tapNodeId = null;
+    let replyTargetId = null;
 
-    // ノードのタップで移動モードを切り替え
-    function toggleMoveMode(id, space) {
+    // キャンバス上のノードタップ制御（ダブルタップ判定）
+    function handleNodeTap(e, id, space) {
+        if(space !== 'canvas') return; // ツリーは触らせない
         if(!activeContactId || !appData.contacts[activeContactId]) return;
-        const nodeObj = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
-        if(!nodeObj || !nodeObj.isMine) return; 
-
-        // 他のすべての移動モードを解除
-        document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
         
-        const el = document.getElementById(`node-${space}-${id}`);
-        if(el) {
-            // 一瞬遅らせてクラス付与（クリックイベント伝播後）
-            setTimeout(() => el.classList.add('move-mode'), 10);
+        const now = Date.now();
+        if(tapNodeId === id && now - lastTapTime < 350) {
+            // ダブルタップ（移動モード開始）
+            document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
+            const el = document.getElementById(`node-canvas-${id}`);
+            if(el) el.classList.add('move-mode');
+            tapNodeId = null; 
+        } else {
+            // シングルタップ（返信先セット）
+            tapNodeId = id;
+            lastTapTime = now;
+            setReply('canvas', id);
         }
     }
 
-    // 移動モード解除 (背景などをクリックした時用)
-    document.addEventListener('pointerdown', (e) => {
-        if(!e.target.closest('.chat-node')) {
-            document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
-        }
-    });
+    function setReply(space, id) {
+        if(!activeContactId) return;
+        const node = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
+        if(!node) return;
+        
+        replyTargetId = id;
+        const senderName = node.isMine ? appData.userName : (appData.contacts[activeContactId].name || '相手');
+        document.getElementById(`${space}-reply-target-name`).innerText = senderName;
+        document.getElementById(`${space}-reply-indicator`).style.display = 'flex';
+        document.getElementById(`${space === 'canvas' ? 'chat-input-text' : 'tree-input-text'}`).focus();
+    }
 
+    function cancelReply(space) {
+        replyTargetId = null;
+        document.getElementById(`${space}-reply-indicator`).style.display = 'none';
+    }
+
+    // ノードのドラッグ処理（➕ボタンを掴んだ時のみ）
     function startNodeDrag(e, id, space) {
+        if(space !== 'canvas') return; // キャンバスのみ許可
         if(!activeContactId || !appData.contacts[activeContactId]) return;
-        const nodeObj = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
+        const nodeObj = appData.contacts[activeContactId].canvasNodes.find(n => n.id === id);
         if(!nodeObj || !nodeObj.isMine) return; 
         
         activeNodeDrag = { id, space, nodeObj, startX: e.clientX, startY: e.clientY, initX: nodeObj.x, initY: nodeObj.y };
@@ -597,7 +631,6 @@
                 el.style.left = `${activeNodeDrag.nodeObj.x}px`;
                 el.style.top = `${activeNodeDrag.nodeObj.y}px`;
             }
-            if(space === 'tree') drawTreeLines();
         }
     }
 
@@ -610,6 +643,78 @@
         }
     }
 
+    // --- 同期クリア処理 ---
+    function clearCanvasCommand() {
+        if(!activeContactId) return;
+        if(!confirm("【⚠️確認】自分と相手のキャンバスをまっさらに消去しますか？\n（ツリー側には会話履歴が残ります）")) return;
+        
+        // 自分のキャンバスをクリア
+        appData.contacts[activeContactId].canvasNodes = [];
+        saveData();
+        if(currentTab === 'canvas') renderWorkspace('canvas');
+        
+        // 相手にクリア命令を送信
+        const conn = activeConnections[activeContactId];
+        if(conn && conn.open) conn.send({ type: 'clear_canvas' });
+    }
+
+    function handleClearCanvasNetwork(targetId) {
+        if(appData.contacts[targetId]) {
+            appData.contacts[targetId].canvasNodes = [];
+            saveData();
+            if(activeContactId === targetId && currentTab === 'canvas') {
+                renderWorkspace('canvas');
+                // ちょっとした通知を出すのも親切です
+                const indicator = document.createElement('div');
+                indicator.style.cssText = "position:absolute; top:20%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:15px; border-radius:10px; font-weight:bold; z-index:9999;";
+                indicator.innerText = "相手がキャンバスをクリアしました";
+                document.body.appendChild(indicator);
+                setTimeout(() => indicator.remove(), 3000);
+            }
+        }
+    }
+
+    // --- ツリーの自動レイアウト計算 ---
+    function calculateTreeLayout(contactId) {
+        const contact = appData.contacts[contactId];
+        if(!contact || !contact.treeNodes) return;
+        const nodes = contact.treeNodes;
+
+        // 親を持たないルートノードを抽出
+        const roots = nodes.filter(n => !n.parentId || !nodes.find(p => p.id === n.parentId));
+
+        let currentX = 0;
+        const X_SPACING = 260; // 横の間隔
+        const Y_SPACING = 180; // 縦の間隔
+        const CENTER_OFFSET_X = 4000; 
+        const CENTER_OFFSET_Y = 4000;
+
+        function traverse(node, depth) {
+            const children = nodes.filter(n => n.parentId === node.id);
+            if (children.length === 0) {
+                // 子がない場合は現在のXを割り当てて進める
+                node.tx = currentX;
+                currentX += X_SPACING;
+            } else {
+                // 子がある場合は子を先に配置し、その中央に親を配置
+                let startX = currentX;
+                children.forEach(c => traverse(c, depth + 1));
+                node.tx = (startX + currentX - X_SPACING) / 2;
+            }
+            node.ty = depth * Y_SPACING;
+        }
+
+        roots.forEach(r => traverse(r, 0));
+
+        // 実際の座標に適用
+        nodes.forEach(n => {
+            if(n.tx !== undefined) {
+                n.x = n.tx + CENTER_OFFSET_X - (currentX / 2); // 全体を中央寄せ
+                n.y = n.ty + CENTER_OFFSET_Y - 200; // 上寄りからスタート
+            }
+        });
+    }
+
     // --- メッセージ送信 (両空間同時生成) ---
     async function sendMessage(sourceSpace) {
         const inputEl = sourceSpace === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
@@ -618,62 +723,54 @@
         if (!text) return;
         if (!activeContactId) return alert('相手の画面を開いてください');
 
-        // AIで感情とツリー階層を推測
-        const aiData = await processEmotionAI(text, activeContactId);
+        // AIで文脈と親ノードを推論
+        const aiData = await processEmotionAI(text, activeContactId, replyTargetId);
         
         const id = Date.now().toString();
         const contact = appData.contacts[activeContactId];
 
-        // 1. キャンバス側の座標計算 (ランダム配置)
+        // 1. キャンバス側の処理 (ランダム または 返信先の近く)
+        let cx, cy;
         const centerC = getCenterCoordinates('canvas');
-        const cx = centerC.x + (Math.random() - 0.5) * 150; 
-        const cy = centerC.y + (Math.random() - 0.5) * 150;
-        
-        const canvasNode = {
-            id, text, aiData, isMine: true,
-            x: cx, y: cy, timestamp: Date.now()
-        };
-
-        // 2. ツリー側の座標計算 (AIが推測した親ノードの真下に配置)
-        let tx, ty;
-        const parentId = aiData?.parentId || null;
-        if (parentId) {
-            const parent = contact.treeNodes.find(n => n.id === parentId);
-            if (parent) {
-                const siblings = contact.treeNodes.filter(n => n.parentId === parentId).length;
-                tx = parent.x + (siblings * 220) - 110; 
-                ty = parent.y + 160;
-            } else {
-                const centerT = getCenterCoordinates('tree');
-                tx = centerT.x; ty = centerT.y + 150;
-            }
+        if (replyTargetId && sourceSpace === 'canvas') {
+            const parent = contact.canvasNodes.find(n => n.id === replyTargetId);
+            if(parent) { cx = parent.x + 100; cy = parent.y + 100; }
+            else { cx = centerC.x; cy = centerC.y; }
         } else {
-            const centerT = getCenterCoordinates('tree');
-            tx = centerT.x; ty = centerT.y + 150;
+            cx = centerC.x + (Math.random() - 0.5) * 150; 
+            cy = centerC.y + (Math.random() - 0.5) * 150;
         }
+        
+        const canvasNode = { id, text, aiData, isMine: true, x: cx, y: cy, timestamp: Date.now() };
 
-        const treeNode = {
-            id, text, aiData, isMine: true,
-            x: tx, y: ty, parentId: parentId, timestamp: Date.now()
-        };
+        // 2. ツリー側の処理 (AIが判断した親ノードをもとに保存し、全体レイアウトを再計算)
+        const finalParentId = (sourceSpace === 'canvas' && replyTargetId) ? replyTargetId : (aiData?.parentId || null);
+        const treeNode = { id, text, aiData, isMine: true, x: 0, y: 0, parentId: finalParentId, timestamp: Date.now() };
 
-        // 両方の配列に保存
         contact.canvasNodes.push(canvasNode);
         contact.treeNodes.push(treeNode);
         
+        // ツリーの自動整頓処理
+        calculateTreeLayout(activeContactId);
+
         inputEl.value = ''; 
+        cancelReply('canvas');
+        cancelReply('tree');
         saveData();
         
-        // 現在開いているタブに応じてDOMを描画
-        appendNodeToDOM(currentTab === 'canvas' ? canvasNode : treeNode, currentTab);
-        if(currentTab === 'tree') drawTreeLines();
+        // 描画更新
+        renderWorkspace(currentTab);
         
-        // 相手に送信 (それぞれのスペース用に2回送信して確実に追加)
+        // 相手に送信
         const conn = activeConnections[activeContactId];
         if(conn && conn.open) {
             conn.send({ type: 'new_node', payload: { space: 'canvas', node: canvasNode } });
+            // ツリーは全体レイアウトが変わるので再計算結果ごと送る手もあるが、相手側でも再計算させるのがシンプル
             conn.send({ type: 'new_node', payload: { space: 'tree', node: treeNode } });
         }
+
+        // 要約の更新トリガー
+        triggerSummaryUpdate(activeContactId);
     }
 
     // --- DOM描画ロジック ---
@@ -684,11 +781,15 @@
             if(!activeContactId || !appData.contacts[activeContactId]) {
                 const svg = document.getElementById('tree-svg-layer');
                 if(svg) { while (svg.firstChild) { svg.removeChild(svg.firstChild); } }
+                document.getElementById('tree-summary-box').style.display = 'none';
                 return;
             }
+            // 描画前に念のためレイアウト再計算
+            calculateTreeLayout(activeContactId);
             const nodes = appData.contacts[activeContactId].treeNodes || [];
             nodes.forEach(n => appendNodeToDOM(n, space));
             drawTreeLines();
+            document.getElementById('tree-summary-box').style.display = 'flex';
         } else {
             const layer = document.getElementById('canvas-layer');
             if(layer) layer.innerHTML = '';
@@ -704,7 +805,7 @@
         if(!targetLayer) return;
 
         const el = document.createElement('div');
-        el.className = `chat-node ${node.isMine ? 'mine' : 'theirs'}`;
+        el.className = `chat-node ${node.isMine ? 'mine' : 'theirs'} ${space === 'tree' ? 'tree-node' : ''}`;
         el.id = `node-${space}-${node.id}`;
         
         const ai = node.aiData || {};
@@ -717,58 +818,45 @@
         const senderName = node.isMine ? appData.userName : (appData.contacts[activeContactId].name || '相手');
         const senderIcon = node.isMine ? appData.userIcon : (appData.contacts[activeContactId].icon || '');
 
-        let contentHtml = `<div class="node-header" onclick="toggleMoveMode('${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName}</div>`;
-        contentHtml += `<div class="node-body" onclick="toggleMoveMode('${node.id}', '${space}')">`;
+        let contentHtml = `<div class="node-header" onpointerdown="handleNodeTap(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName}</div>`;
+        contentHtml += `<div class="node-body" onpointerdown="handleNodeTap(event, '${node.id}', '${space}')">`;
         if (node.text) {
             contentHtml += `<div class="node-text" style="font-family:'${font}', sans-serif; color:${color};">${node.text.replace(/\n/g, '<br>')}</div>`;
         }
         contentHtml += `</div>`;
         
-        // 独立した削除ボタン
-        let controlsHtml = `<div class="node-controls"><div class="node-btn del" onclick="deleteNodeUI('${node.id}', '${space}')">✖</div></div>`;
+        // 独立した削除ボタン (ツリーの場合はツリーからのみ消える)
+        let controlsHtml = `<div class="node-controls"><div class="node-btn del" onpointerdown="event.stopPropagation(); deleteNodeUI('${node.id}', '${space}')">✖</div></div>`;
         
-        // 移動用ハンドル (自分の発言のみ)
-        let handleHtml = node.isMine ? `<div class="move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">✥</div>` : '';
+        // キャンバスのみ移動ハンドルを表示
+        let handleHtml = (space === 'canvas' && node.isMine) ? `<div class="move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">➕</div>` : '';
         
         el.innerHTML = handleHtml + controlsHtml + contentHtml;
         targetLayer.appendChild(el);
     }
 
-    // --- 受信・更新・削除 ---
     function handleReceivedNode(targetId, payload) {
         const { space, node } = payload;
         const contact = appData.contacts[targetId];
         node.isMine = false;
         
         contact[`${space}Nodes`].push(node);
-        if(activeContactId === targetId && currentTab === space) appendNodeToDOM(node, space);
-        saveData();
-        if(space==='tree' && activeContactId === targetId) drawTreeLines();
-    }
-
-    function handleNodeUpdate(targetId, payload) {
-        const { space, node } = payload;
-        const contact = appData.contacts[targetId];
-        const idx = contact[`${space}Nodes`].findIndex(n => n.id === node.id);
-        if(idx !== -1) {
-            node.isMine = false; 
-            contact[`${space}Nodes`][idx] = node;
-            saveData();
-            
-            if(activeContactId === targetId && currentTab === space) {
-                const el = document.getElementById(`node-${space}-${node.id}`);
-                if(el) {
-                    el.style.left = `${node.x}px`; el.style.top = `${node.y}px`;
-                }
-                if(space==='tree') drawTreeLines();
-            }
+        
+        if (space === 'tree') {
+            calculateTreeLayout(targetId);
         }
+        
+        saveData();
+        if(activeContactId === targetId && currentTab === space) renderWorkspace(space);
+        
+        if (space === 'tree') triggerSummaryUpdate(targetId);
     }
 
     function deleteNodeUI(id, space) {
         const spaceName = space === 'canvas' ? 'キャンバス' : 'ツリー';
         if(!confirm(`この${spaceName}上のノードを削除しますか？\n(もう片方の空間には残ります)`)) return;
         handleNodeDelete(activeContactId, space, id);
+        // 相手に削除通知
         const conn = activeConnections[activeContactId];
         if(conn && conn.open) conn.send({ type: 'delete_node', payload: { space, id } });
     }
@@ -777,38 +865,35 @@
         const contact = appData.contacts[targetId];
         if(!contact) return;
         
-        // 指定されたspaceのみ削除
         contact[`${space}Nodes`] = contact[`${space}Nodes`].filter(n => n.id !== id);
-        if(space === 'tree') { contact.treeNodes.forEach(n => { if(n.parentId === id) n.parentId = null; }); }
+        if(space === 'tree') { 
+            contact.treeNodes.forEach(n => { if(n.parentId === id) n.parentId = null; }); 
+            calculateTreeLayout(targetId);
+        }
         
         saveData();
         if(activeContactId === targetId && currentTab === space) {
-            const el = document.getElementById(`node-${space}-${id}`);
-            if(el) el.remove();
-            if(space==='tree') drawTreeLines();
+            renderWorkspace(space);
         }
     }
 
-    // ツリーの線画処理（最背面のSVGレイヤー）
     function drawTreeLines() {
         if(currentTab !== 'tree' || !activeContactId) return;
         const svg = document.getElementById('tree-svg-layer');
         if(!svg) return;
         
-        while (svg.firstChild) {
-            svg.removeChild(svg.firstChild);
-        }
+        while (svg.firstChild) { svg.removeChild(svg.firstChild); }
         
         const nodes = appData.contacts[activeContactId].treeNodes || [];
         nodes.forEach(n => {
             if(n.parentId) {
                 const parent = nodes.find(p => p.id === n.parentId);
                 if(parent) {
-                    const px = parent.x + 80; const py = parent.y + 45;
-                    const cx = n.x + 80; const cy = n.y + 45;
+                    const px = parent.x + 80; const py = parent.y + 45; // ノードの概算中心
+                    const cx = n.x + 80; const cy = n.y; // 子ノードの上部
                     
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    const d = `M ${px},${py} C ${px},${(py+cy)/2} ${cx},${(py+cy)/2} ${cx},${cy}`;
+                    const d = `M ${px},${py} C ${px},${py + 80} ${cx},${cy - 80} ${cx},${cy}`;
                     path.setAttribute('d', d); 
                     path.setAttribute('stroke', 'var(--accent-color)');
                     path.setAttribute('stroke-width', '4');
@@ -821,41 +906,86 @@
     }
 
     // --- AI ---
-    async function processEmotionAI(text, targetId) {
+    async function processEmotionAI(text, targetId, explicitParentId = null) {
         if (!text) return null;
         
-        // ツリーの直近の履歴を取得してAIに文脈を理解させる
         const contact = appData.contacts[targetId];
         const treeContext = contact ? (contact.treeNodes || []).slice(-8).map(n => ({id: n.id, text: n.text})) : [];
 
         if (!appData.openAiKey) {
-            // APIキーがない場合は相手側に推論をリクエスト
             const conn = activeConnections[targetId];
-            if(!conn || !conn.open) return { parentId: treeContext.length > 0 ? treeContext[treeContext.length-1].id : null }; 
+            if(!conn || !conn.open) return { parentId: explicitParentId || (treeContext.length > 0 ? treeContext[treeContext.length-1].id : null) }; 
             const reqId = Date.now().toString();
             return new Promise(resolve => {
                 const handler = (e) => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve(e.detail); };
                 window.addEventListener(`ai_result_${reqId}`, handler);
                 conn.send({ type: 'request_ai_process', payload: { reqId, text } });
-                setTimeout(() => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve({ parentId: null }); }, 5000);
+                setTimeout(() => { window.removeEventListener(`ai_result_${reqId}`, handler); resolve({ parentId: explicitParentId }); }, 5000);
             });
         }
         try {
-            const prompt = `以下のテキストの感情を判定し、さらに過去のツリー履歴から最も関連する話題の親ノードIDを推論してJSONで返せ。関連がない新しい話題の場合は null を指定しろ。
+            const prompt = `以下のテキストを解析し、ツリー履歴から一番関連する話題の親ノードIDを推論してJSONで返せ。関連がない新しい話題の場合は null を指定しろ。
 履歴: ${JSON.stringify(treeContext)}
-フォーマット: {"fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16|Yusei Magic|M PLUS Rounded 1c|Shippori Mincho]", "color": "[HEXカラーコード]", "parentId": "履歴のidまたはnull"}
+フォーマット: {"fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16]", "color": "[HEXカラーコード]", "parentId": "履歴のidまたはnull"}
 テキスト: "${text}"`;
             const response = await fetch("https://api.openai.com/v1/chat/completions", {
                 method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appData.openAiKey}` },
                 body: JSON.stringify({ model: "gpt-4o", messages: [{role: "system", content: "You output strictly valid JSON."}, {role: "user", content: prompt}], response_format: { type: "json_object" } }) 
             });
             const data = await response.json();
-            if(data.error) throw new Error(data.error.message);
-            return JSON.parse(data.choices[0].message.content);
+            const result = JSON.parse(data.choices[0].message.content);
+            if(explicitParentId) result.parentId = explicitParentId; // ユーザー指定優先
+            return result;
         } catch(e) { 
-            console.error("AI Emotion Error:", e); 
-            // エラー時は直近の発言を親にする簡易処理
-            return { parentId: treeContext.length > 0 ? treeContext[treeContext.length-1].id : null }; 
+            return { parentId: explicitParentId || (treeContext.length > 0 ? treeContext[treeContext.length-1].id : null) }; 
+        }
+    }
+
+    // --- AI まとめ機能 ---
+    let summaryTimeout = null;
+    function triggerSummaryUpdate(targetId) {
+        if(!appData.openAiKey) return;
+        clearTimeout(summaryTimeout);
+        // メッセージが続いて投稿されることを考慮して3秒待つ
+        summaryTimeout = setTimeout(() => generateTreeSummary(targetId), 3000);
+    }
+
+    async function generateTreeSummary(targetId) {
+        const contact = appData.contacts[targetId];
+        if(!contact || !contact.treeNodes || contact.treeNodes.length === 0) return;
+        
+        // 直近15件のテキストを要約させる
+        const recentTexts = contact.treeNodes.slice(-15).map(n => n.text).join(" / ");
+        
+        try {
+            document.getElementById('tree-summary-text').innerText = "AI要約生成中...";
+            const prompt = `以下の会話内容の要点を、30文字以内で簡潔にまとめてください。\n\n${recentTexts}`;
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appData.openAiKey}` },
+                body: JSON.stringify({ model: "gpt-4o-mini", messages: [{role: "user", content: prompt}], max_tokens: 50 }) 
+            });
+            const data = await response.json();
+            const summary = data.choices[0].message.content.trim();
+            
+            updateTreeSummaryUI(summary);
+            
+            // 相手にも要約を送信
+            const conn = activeConnections[targetId];
+            if(conn && conn.open) {
+                conn.send({ type: 'update_tree_summary', payload: summary });
+            }
+        } catch(e) {
+            console.error("Summary Error", e);
+            document.getElementById('tree-summary-text').innerText = "要約に失敗しました";
+        }
+    }
+
+    function updateTreeSummaryUI(text) {
+        const box = document.getElementById('tree-summary-box');
+        const textBox = document.getElementById('tree-summary-text');
+        if(box && textBox) {
+            textBox.innerText = text;
+            if (currentTab === 'tree') box.style.display = 'flex';
         }
     }
 </script>
