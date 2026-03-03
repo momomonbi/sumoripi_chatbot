@@ -54,7 +54,6 @@
         
         .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.8; pointer-events: none; transition: opacity 0.3s; }
         
-        /* 🧠 AI話題まとめパネル & 透かしミニマップ */
         .ai-summary-panel { 
             position: absolute; top: 15px; right: 15px; z-index: 500; 
             background: rgba(255, 255, 255, 0.85);
@@ -75,7 +74,6 @@
         .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
         @keyframes bounceIn { 0% { opacity:0; transform: translateX(-50%) scale(0.8); } 100% { opacity:1; transform: translateX(-50%) scale(1); } }
         
-        /* --- キャンバス用ノード --- */
         .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 140px; max-width: 320px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
@@ -83,13 +81,12 @@
         .chat-node.move-mode { border: 2px dashed var(--accent-color); z-index: 200 !important; }
         .chat-node.move-mode .node-header { background: rgba(0, 122, 255, 0.1); }
         
-        /* 操作ハンドル（四隅に配置） */
         .action-handle { display: none; position: absolute; width: 32px; height: 32px; color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 201; pointer-events: auto; }
-        .move-handle { top: -12px; left: -12px; background: #4CAF50; cursor: grab; } /* 左上: 移動 */
+        .move-handle { top: -12px; left: -12px; background: #4CAF50; cursor: grab; }
         .move-handle:active { cursor: grabbing; transform: scale(1.1); }
-        .del-handle { top: -12px; right: -12px; background: #f44336; cursor: pointer; } /* 右上: 削除 */
-        .link-handle { bottom: -12px; left: -12px; background: #9c27b0; cursor: pointer; } /* 左下: リンク */
-        .expand-handle { bottom: -12px; right: -12px; background: #2196f3; cursor: pointer; font-size:12px; } /* 右下: 展開 */
+        .del-handle { top: -12px; right: -12px; background: #f44336; cursor: pointer; } 
+        .link-handle { bottom: -12px; left: -12px; background: #9c27b0; cursor: pointer; } 
+        .expand-handle { bottom: -12px; right: -12px; background: #2196f3; cursor: pointer; font-size:12px; } 
         .chat-node.move-mode .action-handle { display: flex; }
 
         .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
@@ -97,18 +94,17 @@
         .node-time { font-size: 0.7em; color: #888; margin-left: auto; font-weight: normal; }
         .node-body { padding: 10px 15px 0 15px; cursor: pointer; pointer-events: auto; }
         
-        .node-text { line-height: 1.4; word-break: break-word; pointer-events: none; }
+        .node-text { line-height: 1.4; word-break: break-word; pointer-events: none; transition: font-size 0.3s; }
         .text-collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .text-full { display: block; }
 
-        /* --- ツリー用ノード（視認性向上） --- */
         .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; }
         .tree-node-name { display: flex; align-items: center; font-size: 0.7rem; color: #666; margin-bottom: 4px; font-weight: bold; pointer-events: none; }
         
         .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 8px 12px; border-radius: 8px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .tree-node.mine .tree-node-content { border-left-color: #4CAF50; }
 
-        .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; }
+        .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; transition: font-size 0.3s; }
         
         .tree-controls { display: flex; gap: 4px; position: absolute; right: -40px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .tree-node:hover .tree-controls { opacity: 1; pointer-events: auto; }
@@ -129,7 +125,7 @@
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid rgba(128,128,128,0.3); border-radius: 12px; font-size: 1rem; }
         
         .contact-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:8px; border:1px solid #eee; }
-        .contact-item button { padding:6px 12px; border-radius:8px; font-weight:bold; }
+        .contact-item button { padding:6px 12px; border-radius:8px; font-weight:bold; cursor: pointer; border:none; }
     </style>
 </head>
 <body data-theme="default">
@@ -240,7 +236,7 @@
             <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
                 <img id="profile-icon-preview" src="" style="width:60px; height:60px; border-radius:50%; object-fit:cover; background:#ccc; border:2px solid var(--accent-color);">
                 <input type="file" id="icon-upload-input" accept="image/*" style="display:none;" onchange="autoCropAndSaveIcon(this)">
-                <button type="button" onclick="document.getElementById('icon-upload-input').click()" style="padding:8px 15px; background:rgba(128,128,128,0.1); font-weight:bold; border-radius:10px; color:var(--text-color);">写真を選ぶ</button>
+                <button type="button" onclick="document.getElementById('icon-upload-input').click()" style="padding:8px 15px; background:rgba(128,128,128,0.1); font-weight:bold; border-radius:10px; color:var(--text-color); border:none;">写真を選ぶ</button>
             </div>
             <div class="form-group">
                 <label>あなたの名前</label>
@@ -272,8 +268,8 @@
                 <label>背景画像（透かし）</label>
                 <div style="display:flex; gap:10px; align-items:center;">
                     <input type="file" id="bg-upload-input" accept="image/*" style="display:none;" onchange="handleBgUpload(this)">
-                    <button type="button" onclick="document.getElementById('bg-upload-input').click()" style="padding:8px 15px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:var(--text-color);">画像を選ぶ</button>
-                    <button type="button" onclick="appData.bgImage=''; saveData(); applyTheme();" style="padding:8px 15px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold;">消す</button>
+                    <button type="button" onclick="document.getElementById('bg-upload-input').click()" style="padding:8px 15px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:var(--text-color); border:none;">画像を選ぶ</button>
+                    <button type="button" onclick="appData.bgImage=''; saveData(); applyTheme();" style="padding:8px 15px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold; border:none;">消す</button>
                 </div>
             </div>
             <div class="form-group">
@@ -298,12 +294,12 @@
             <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;">個別に繋ぐ / ルームを作る (複数人)</div>
             <input type="text" id="p2p-target-id" placeholder="相手ID (複数人はカンマ区切り)" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1rem; margin-bottom:8px; box-sizing:border-box;">
             <input type="text" id="room-name-input" placeholder="ルーム名 (複数人の場合)" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(128,128,128,0.3); font-size:0.9rem; margin-bottom:8px; box-sizing:border-box;">
-            <button onclick="connectNewContact()" style="width:100%; padding:10px; background:var(--accent-color); color:white; font-weight:900; border-radius:10px;">接続・作成</button>
+            <button onclick="connectNewContact()" style="width:100%; padding:10px; background:var(--accent-color); color:white; font-weight:900; border-radius:10px; border:none;">接続・作成</button>
         </div>
 
         <h4 style="margin:0 0 10px 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:5px;">履歴・連絡帳</h4>
         <div id="contacts-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
-        <button onclick="closeConnectModal()" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); color:#333; border-radius:10px; font-weight:bold;">閉じる</button>
+        <button onclick="closeConnectModal()" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); color:#333; border-radius:10px; font-weight:bold; border:none;">閉じる</button>
     </div>
 </div>
 
@@ -312,7 +308,7 @@
         <h3 style="margin-top:0;">🌳 ツリー切替 / 管理</h3>
         <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">表示したい話題の始まりを選択してください。</p>
         <div id="tree-manage-list" style="max-height:50vh; overflow-y:auto; margin-bottom:15px;"></div>
-        <button onclick="document.getElementById('tree-manage-modal').style.display='none'" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:#333;">閉じる</button>
+        <button onclick="document.getElementById('tree-manage-modal').style.display='none'" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:#333; border:none;">閉じる</button>
     </div>
 </div>
 
@@ -321,7 +317,6 @@
     const STORE_NAME = 'appState';
     const DB_VERSION = 1;
 
-    // isRoomフラグとmembers配列で複数人チャットを管理
     let appData = { 
         theme: 'default', userName: 'ゲスト', userIcon: '', openAiKey: '',
         bgImage: '', bgOpacity: 0.2,
@@ -336,7 +331,6 @@
     let currentAttachedFile = null; 
     let minimapAnimationId = null;
     
-    // オフライン・リアルタイム検知用
     let heartbeatTimer = null;
     let connectionStatus = {};
 
@@ -400,7 +394,6 @@
         initWorkspaces();
         startHeartbeat(); 
         
-        // ミニマップループ開始
         updateMinimap();
 
         const activeTab = document.querySelector('.tab.active');
@@ -503,7 +496,6 @@
         if(activeContactId && appData.contacts[activeContactId]) {
             const contact = appData.contacts[activeContactId];
             
-            // ルーム（複数人）か1on1かで表示を変える
             if (contact.isRoom) {
                 tabBtn.innerHTML = `🏰 ルーム (${contact.name})`;
                 tabBtn.classList.add('room');
@@ -543,46 +535,92 @@
         setTimeout(() => { if(tabBtn.classList.contains('active')) document.getElementById('tab-highlight').style.width = tabBtn.offsetWidth + 'px'; }, 50);
     }
 
-    // --- 画像書き出し（html2canvas） ---
+    // --- 【修正】画像書き出し（確実なキャプチャ方法） ---
     async function exportCanvasAsImage() {
         if(!activeContactId) return;
         const btn = document.getElementById('btn-export-canvas');
         btn.innerText = "⏳ 処理中...";
+        
         try {
-            const canvasNodesLayer = document.getElementById('canvas-layer');
-            // 一時的に全体のバウンディングボックスを取得してキャプチャ範囲を特定する
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
             if(nodes.length === 0) { alert('書き出すノードがありません'); btn.innerText="📷 保存"; return; }
             
+            // 全ノードのバウンディングボックスを計算
             let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
             nodes.forEach(n => {
                 if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
                 if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
             });
             // マージン
-            minX -= 50; minY -= 50; maxX += 400; maxY += 400;
+            minX -= 100; minY -= 100; maxX += 400; maxY += 300;
 
-            const originalTransform = canvasNodesLayer.style.transform;
-            // キャプチャ用に一時的に移動
-            canvasNodesLayer.style.transform = `translate(${-minX}px, ${-minY}px)`;
+            // 画面外に撮影用のコンテナを作成（これが真っ白バグを防ぐ）
+            const captureArea = document.createElement('div');
+            captureArea.style.position = 'absolute';
+            captureArea.style.left = '-9999px';
+            captureArea.style.top = '-9999px';
+            captureArea.style.width = (maxX - minX) + 'px';
+            captureArea.style.height = (maxY - minY) + 'px';
+            captureArea.style.backgroundColor = appData.theme === 'dark' ? '#1a1a1a' : '#f0f4f8';
+            captureArea.style.overflow = 'hidden';
+            captureArea.style.fontFamily = "var(--app-font)";
+            document.body.appendChild(captureArea);
+
+            // 1. ノードをクローンして座標を修正（transformではなくleft,topで配置）
+            const nodesLayer = document.getElementById('canvas-nodes-container');
+            const nodesClone = document.createElement('div');
+            nodesClone.style.position = 'absolute';
+            nodesClone.style.top = '0'; nodesClone.style.left = '0';
+            nodesClone.style.width = '100%'; nodesClone.style.height = '100%';
             
-            // width/heightを指定してキャプチャ
-            const canvas = await html2canvas(canvasNodesLayer, { 
-                backgroundColor: appData.theme === 'dark' ? '#1a1a1a' : '#f0f4f8',
-                width: maxX - minX,
-                height: maxY - minY,
-                scale: 1.5 // 少し高画質に
+            Array.from(nodesLayer.children).forEach(child => {
+                const clone = child.cloneNode(true);
+                const currentLeft = parseFloat(clone.style.left) || 0;
+                const currentTop = parseFloat(clone.style.top) || 0;
+                clone.style.left = (currentLeft - minX) + 'px';
+                clone.style.top = (currentTop - minY) + 'px';
+                clone.style.transform = 'none'; // transformをリセット
+                // 余計なボタン類を削除して綺麗に
+                clone.querySelectorAll('.action-handle').forEach(h => h.remove());
+                nodesClone.appendChild(clone);
             });
             
-            // 元に戻す
-            canvasNodesLayer.style.transform = originalTransform;
+            // 2. SVG（背景の線）をクローンして座標を修正
+            const svgLayer = document.getElementById('canvas-svg-layer');
+            const svgClone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgClone.setAttribute('width', (maxX - minX) + 'px');
+            svgClone.setAttribute('height', (maxY - minY) + 'px');
+            svgClone.style.position = 'absolute';
+            svgClone.style.top = '0'; svgClone.style.left = '0';
+            
+            const defs = svgLayer.querySelector('defs');
+            if (defs) svgClone.appendChild(defs.cloneNode(true));
+            
+            // SVGの線全体を <g> で囲んで平行移動
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('transform', `translate(${-minX}, ${-minY})`);
+            Array.from(svgLayer.querySelectorAll('path')).forEach(p => g.appendChild(p.cloneNode(true)));
+            svgClone.appendChild(g);
+            
+            captureArea.appendChild(svgClone);
+            captureArea.appendChild(nodesClone);
+
+            // html2canvas実行
+            const canvas = await html2canvas(captureArea, { 
+                backgroundColor: appData.theme === 'dark' ? '#1a1a1a' : '#f0f4f8',
+                scale: 1.5,
+                useCORS: true
+            });
+            
+            document.body.removeChild(captureArea); // お掃除
             
             const link = document.createElement('a');
             link.download = `Canvas_${formatTime(Date.now()).replace(/[\/ :]/g, '')}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
+            
         } catch(e) {
-            console.error(e);
+            console.error("書き出しエラー:", e);
             alert("画像書き出しに失敗しました");
         } finally {
             btn.innerText = "📷 保存";
@@ -623,7 +661,7 @@
         document.getElementById('global-input-preview-area').style.display = 'none';
     }
 
-    // --- P2P & 履歴閲覧 & 同期ロジック ---
+    // --- P2P & 同期 ---
     let peer = null;
 
     function initP2P() {
@@ -716,11 +754,9 @@
         const ids = inputIds.split(',').map(s=>s.trim()).filter(s=>s.length>0);
         
         if (ids.length === 1 && !roomName) {
-            // 1on1
             if(ids[0] === appData.myP2pId) return alert('自分のIDです');
             openContactHistory(ids[0]);
         } else {
-            // Room
             const roomId = "ROOM-" + Date.now();
             const members = ids.filter(id => id !== appData.myP2pId);
             appData.contacts[roomId] = { 
@@ -740,7 +776,6 @@
         
         const contact = appData.contacts[targetId];
         if(!contact) { 
-            // 1on1
             appData.contacts[targetId] = { isRoom: false, name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; 
             saveData(); 
         }
@@ -748,7 +783,6 @@
         updateTabUI(); 
         renderWorkspace(currentTab);
         
-        // 接続処理
         const peersToConnect = contact?.isRoom ? contact.members : [targetId];
         peersToConnect.forEach(peerId => {
             if (!connectionStatus[peerId]) connectionStatus[peerId] = { lastPong: 0, isOnline: false };
@@ -756,12 +790,11 @@
                 const conn = peer.connect("ncchat3-" + peerId, { reliable: true });
                 setupP2PConnection(peerId, conn, true);
             } else {
-                initiateSyncForPeer(peerId, targetId); // 既に繋がっていれば同期
+                initiateSyncForPeer(peerId, targetId);
             }
         });
     }
 
-    // グループ対応の同期要求
     function initiateSyncForPeer(peerId, contextId) {
         const contact = appData.contacts[contextId];
         if (!contact) return;
@@ -775,7 +808,6 @@
 
     function handleSyncMerged(contextId) {
         saveData();
-        // 重なり解消
         if(activeContactId === contextId) {
             renderWorkspace('canvas');
             renderWorkspace('tree');
@@ -791,7 +823,6 @@
             updateOnlineIndicator();
             conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
             
-            // 1on1なら同期、グループならグループコンテキストで同期
             if (activeContactId && (!appData.contacts[activeContactId].isRoom || appData.contacts[activeContactId].members.includes(peerId))) {
                 initiateSyncForPeer(peerId, activeContactId);
             }
@@ -813,22 +844,18 @@
             }
             
             if (data.type === 'system_info') {
-                // 個別コンタクトとしての情報も更新しておく
                 if(appData.contacts[peerId] && !appData.contacts[peerId].isRoom) {
                     appData.contacts[peerId].name = data.payload.name;
                     if(data.payload.icon) appData.contacts[peerId].icon = data.payload.icon;
                     saveData();
                 }
-                // 送信者のアイコンキャッシュ
                 connectionStatus[peerId].name = data.payload.name;
                 connectionStatus[peerId].icon = data.payload.icon;
                 updateOnlineIndicator();
                 if(activeContactId === peerId) updateTabUI();
             } else if (data.type === 'new_node' || data.type === 'update_node' || data.type === 'delete_node' || data.type === 'clear_canvas' || data.type === 'update_summary' || data.type === 'toggle_collapse') {
-                // Context ID (Room ID or Sender ID)
                 const targetContextId = data.payload.groupId || peerId;
                 
-                // 未知のグループなら作成
                 if (data.payload.groupId && !appData.contacts[data.payload.groupId]) {
                     appData.contacts[data.payload.groupId] = { isRoom: true, name: "招待されたルーム", members: [peerId], canvasNodes: [], treeNodes: [] };
                 }
@@ -858,7 +885,6 @@
                     }
                 }
             }
-            // 同期関連
             else if (data.type === 'sync_check') {
                 const contextId = data.payload.contextId;
                 const contact = appData.contacts[contextId];
@@ -1048,7 +1074,6 @@
         document.getElementById('new-message-nav').style.display = 'none';
     }
 
-    // 透かしミニマップの描画ループ
     function updateMinimap() {
         if (currentTab === 'canvas' && activeContactId && appData.contacts[activeContactId]) {
             const canvas = document.getElementById('canvas-minimap');
@@ -1059,13 +1084,11 @@
             
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
             if (nodes.length > 0) {
-                // Bounds
                 let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
                 nodes.forEach(n => {
                     if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
                     if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
                 });
-                // Margin
                 minX -= 200; minY -= 200; maxX += 400; maxY += 400;
                 
                 const w = maxX - minX; const h = maxY - minY;
@@ -1076,14 +1099,13 @@
 
                 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-                // Draw nodes
                 nodes.forEach(n => {
                     const cx = ox + (n.x - minX) * scale;
                     const cy = oy + (n.y - minY) * scale;
                     ctx.beginPath();
                     ctx.arc(cx, cy, 3, 0, Math.PI*2);
                     if (targetPanCoords && n.x === targetPanCoords.x && n.y === targetPanCoords.y) {
-                        ctx.fillStyle = '#ff9800'; // 新着はオレンジ
+                        ctx.fillStyle = '#ff9800'; 
                         ctx.arc(cx, cy, 6, 0, Math.PI*2);
                     } else if (n.isMine) {
                         ctx.fillStyle = '#007aff';
@@ -1093,7 +1115,6 @@
                     ctx.fill();
                 });
 
-                // Draw viewport rect
                 const cont = document.getElementById('canvas-workspace');
                 const vs = viewStates['canvas'];
                 const vpX = ox + (-vs.panX - minX) * scale;
@@ -1223,7 +1244,6 @@
         }
     }
 
-    // --- ツリー切り替え管理 ---
     function openTreeManageModal() {
         if(!activeContactId) return;
         const list = document.getElementById('tree-manage-list');
@@ -1294,7 +1314,6 @@
         return {x: px, y: py};
     }
 
-    // --- メイン送信処理 (グループ対応) ---
     function broadcastToRoom(targetContextId, messageObj) {
         const contact = appData.contacts[targetContextId];
         if(!contact) return;
@@ -1365,11 +1384,9 @@
                 renderWorkspace('tree');
             }
             
-            // ブロードキャスト
             broadcastToRoom(activeContactId, { type: 'new_node', payload: { space: 'canvas', node: canvasNode, groupId: contact.isRoom ? activeContactId : undefined } });
             broadcastToRoom(activeContactId, { type: 'new_node', payload: { space: 'tree', node: treeNode, groupId: contact.isRoom ? activeContactId : undefined } });
 
-            // AI解析
             processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
             
         } catch (error) {
@@ -1378,7 +1395,6 @@
         }
     }
 
-    // --- DOM描画 ---
     function getTreeFamily(rootId, allNodes) {
         if(!rootId) return [];
         const family = [];
@@ -1430,7 +1446,6 @@
             let currentY = 0;
             const startX = 0;
             
-            // ツリーの縦並び配置計算（見やすさ改善）
             function calcLayout(nodeId, depth) {
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
@@ -1477,7 +1492,6 @@
         if (node.isMine) {
             senderName = appData.userName; senderIcon = appData.userIcon;
         } else {
-            // グループチャットの場合は送信者のIDから情報を引く
             if (node.senderId && connectionStatus[node.senderId]) {
                 senderName = connectionStatus[node.senderId].name || node.senderId;
                 senderIcon = connectionStatus[node.senderId].icon || '';
@@ -1493,6 +1507,10 @@
         const ai = node.aiData || {};
         const font = ai.fontFamily || 'inherit';
         const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
+        // AIのパラメータ（強弱・感情）を反映
+        const canvasFontSize = ai.fontSize || '0.95rem';
+        const treeFontSize = ai.fontSize ? `calc(${ai.fontSize} * 0.8)` : '0.9rem'; // ツリーは少し縮小して崩れを防ぐ
+        const fontWeight = ai.fontWeight || 'bold';
         const timeStr = formatTime(node.timestamp);
         
         const safeText = node.text ? node.text.replace(/\n/g, '<br>') : '';
@@ -1505,14 +1523,12 @@
             const safeY = node.tempY !== undefined ? node.tempY : 0;
             el.style.left = `${safeX}px`; el.style.top = `${safeY}px`;
             
-            const isLong = displayText.length >= 25;
-            
             const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
             let contentHtml = `
                 <div class="tree-node-name">${senderName} <span style="margin-left:6px; font-weight:normal;">${timeStr}</span></div>
                 <div class="tree-node-content">
-                    <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>
+                    <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color}; font-size:${treeFontSize}; font-weight:${fontWeight};">${displayText}</div>
             `;
             if (node.file) {
                 if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; border-radius:6px; margin-top:4px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
@@ -1531,16 +1547,15 @@
             
             const isExpanded = node.isExpanded ? true : false;
             
-            // 四隅のコントロール
             let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div><div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div><div class="action-handle link-handle" onclick="startLinkMode(event, '${node.id}')">🔗</div>` : `<div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div>`;
-
             let expandBtn = `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>`;
 
             let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName} <span class="node-time">${timeStr}</span></div>`;
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
             if(displayText) {
-                contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+                // ここで感情によるフォントサイズと太さを反映
+                contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color}; font-size:${canvasFontSize}; font-weight:${fontWeight};">${displayText}</div>`;
             }
             if (node.file) {
                 if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-width:100%; border-radius:8px; margin-top:8px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
@@ -1607,7 +1622,6 @@
         }
     }
 
-    // --- キャンバスの線 ---
     function getEdgeOffset(w, h, dx, dy) {
         if (dx === 0 && dy === 0) return {x:0, y:0};
         const angle = Math.atan2(dy, dx);
@@ -1661,7 +1675,6 @@
         });
     }
 
-    // --- ツリーの線 ---
     function drawTreeLines(familyNodes) {
         const svg = document.getElementById('tree-svg-layer');
         if(!svg) return;
@@ -1677,7 +1690,6 @@
                     const cy = (n.tempY || 0) + 20;
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    // L字型の線で親子をわかりやすく
                     path.setAttribute('d', `M ${px},${py} L ${px},${cy} L ${cx},${cy}`);
                     path.setAttribute('stroke', 'rgba(128, 128, 128, 0.4)'); 
                     path.setAttribute('stroke-width', '2');
@@ -1688,10 +1700,8 @@
         });
     }
 
-    // --- AI まとめ生成 ---
     async function requestSummaryAI(texts) {
         if (!appData.openAiKey || !texts) return null;
-        // 3行超要約にプロンプトを変更
         const prompt = `以下の会話内容から全体を把握できる超要約を作成してください。
 ルール:
 1. 箇条書き（-や・など）は絶対に使わないこと。
@@ -1747,7 +1757,7 @@ ${texts.substring(0, 1500)}`;
         }
     }
 
-    // --- AI 通常解析 (配置と装飾) ---
+    // --- 【修正】AI 強力感情パラメーター出力 ---
     async function processEmotionAndTreeAI(text, targetContextId, nodeId, canvasParentId) {
         if (!appData.openAiKey || !text) return; 
         
@@ -1755,15 +1765,24 @@ ${texts.substring(0, 1500)}`;
         const treeContext = (contact.treeNodes || []).slice(-20).filter(n => n.id !== nodeId && n.text).map(n => ({id: n.id, text: n.text.substring(0,30)}));
 
         try {
-            const prompt = `あなたはマインドマップ構築AIです。
+            const prompt = `あなたはマインドマップ構築＆感情解析AIです。
 過去の履歴: ${JSON.stringify(treeContext)}
 新しい発言: "${text}"
 
+発言の「感情（喜怒哀楽）」を強く判定し、それに合わせたデザインパラメータを出力してください。
+【感情ごとのデザインルール（厳守）】
+・喜び/楽しい/嬉しい: fontSizeは "1.3rem"〜"1.6rem", fontWeightは "900", fontFamilyは "M PLUS Rounded 1c" または "Yusei Magic", colorは "#ff4081" や "#ff9800" などの暖色。
+・悲しみ/落ち込み/不安: fontSizeは "0.75rem"〜"0.85rem", fontWeightは "normal", fontFamilyは "Shippori Mincho", colorは "#5c6bc0" や "#757575" などの寒色や暗色。
+・怒り/強い主張: fontSizeは "1.4rem"〜"1.7rem", fontWeightは "900", fontFamilyは "RocknRoll One" または "DotGothic16", colorは "#d32f2f" などの赤系。
+・普通/冷静: fontSizeは "0.95rem", fontWeightは "bold", fontFamilyは "Zen Maru Gothic" または "Noto Sans JP", colorは "var(--text-color)"。
+
 以下の厳密なJSONフォーマットで返して下さい:
 {
-  "formattedText": "元の発言テキストを、横に広がりすぎないように意味の切れ目など適度な位置(15〜20文字程度)で改行(\\n)を挿入したもの。",
-  "fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16|Yusei Magic|M PLUS Rounded 1c|Shippori Mincho]",
+  "formattedText": "元の発言テキストを適度な位置(15〜20文字程度)で改行(\\n)を挿入したもの。",
+  "fontFamily": "[フォント名]",
   "color": "[HEXカラーコード]",
+  "fontSize": "[サイズ]",
+  "fontWeight": "[太さ]",
   "parentId": "関連する親ノードID（無ければnull）"
 }`;
 
@@ -1775,11 +1794,11 @@ ${texts.substring(0, 1500)}`;
             const updateData = JSON.parse(data.choices[0].message.content);
             
             const cNode = contact.canvasNodes.find(n => n.id === nodeId);
-            if(cNode) cNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, formattedText: updateData.formattedText };
+            if(cNode) cNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, fontSize: updateData.fontSize, fontWeight: updateData.fontWeight, formattedText: updateData.formattedText };
 
             const tNode = contact.treeNodes.find(n => n.id === nodeId);
             if(tNode) {
-                tNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, formattedText: updateData.formattedText };
+                tNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, fontSize: updateData.fontSize, fontWeight: updateData.fontWeight, formattedText: updateData.formattedText };
                 tNode.parentId = canvasParentId || updateData.parentId;
             }
             saveData();
