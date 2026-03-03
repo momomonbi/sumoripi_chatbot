@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Decol:wght@400;700&family=Kiwi+Maru:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&family=RocknRoll+One&family=Shippori+Mincho:wght@400;700;800&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
         :root { --bg-color: #f0f4f8; --header-bg: rgba(255, 255, 255, 0.95); --accent-color: #007aff; --text-color: #333; --app-font: 'Zen Maru Gothic', sans-serif; --card-bg: rgba(255, 255, 255, 0.8); }
         [data-theme="dark"] { --bg-color: #1a1a1a; --header-bg: rgba(30, 30, 30, 0.95); --accent-color: #ff4081; --text-color: #eee; --card-bg: rgba(50, 50, 50, 0.8); }
@@ -36,11 +37,11 @@
         .tab { flex: 1; text-align: center; padding: 10px 0; color: var(--text-color); opacity: 0.6; font-weight: 900; font-size: 0.85rem; border-radius: 12px; cursor: pointer; position: relative; z-index: 2; transition: all 0.3s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tab.active { opacity: 1; color: #fff; }
         .tab.connected { background: #4CAF50 !important; color: white !important; opacity: 1; animation: pulse 2s infinite; }
-        .tab.room-connected { background: #9c27b0 !important; color: white !important; opacity: 1; animation: pulseRoom 2s infinite; }
+        .tab.room { background: #9c27b0 !important; color: white !important; opacity: 1; animation: pulse-room 2s infinite; }
         .tab.offline { background: #9e9e9e !important; color: white !important; opacity: 1; }
         .tab-highlight { position: absolute; top: 5px; bottom: 5px; left: 5px; width: 0; background: var(--accent-color); border-radius: 12px; z-index: 1; transition: transform 0.3s, width 0.3s; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
-        @keyframes pulseRoom { 0% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(156, 39, 176, 0); } 100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); } }
+        @keyframes pulse-room { 0% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(156, 39, 176, 0); } 100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); } }
 
         .tab-content { display: none; flex-grow: 1; position: relative; overflow: hidden; }
         .tab-content.active { display: flex; flex-direction: column; animation: fadeIn 0.3s forwards; }
@@ -51,59 +52,44 @@
         .workspace-container:active { cursor: grabbing; }
         .workspace-layer { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: 10000px; height: 10000px; transition: transform 0.1s; z-index: 1; }
         
-        .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.65; pointer-events: none; transition: opacity 0.3s; }
+        .online-indicator { position: absolute; top: 15px; left: 15px; z-index: 500; background: var(--card-bg); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); opacity: 0.8; pointer-events: none; transition: opacity 0.3s; }
         
-        /* 🧠 AI話題まとめ＆全体マップ パネル */
+        /* 🧠 AI話題まとめパネル & 透かしミニマップ */
         .ai-summary-panel { 
             position: absolute; top: 15px; right: 15px; z-index: 500; 
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px); 
             padding: 12px 16px; border-radius: 16px; 
-            width: fit-content; max-width: 240px; 
-            font-size: 0.75rem; font-weight: bold;
+            width: fit-content; max-width: 260px; 
+            font-size: 0.8rem; font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            border: 1px solid rgba(128,128,128,0.2); 
-            line-height: 1.6; color: var(--text-color);
+            border: 1px solid rgba(255,255,255,0.4); 
+            line-height: 1.5; pointer-events:none; 
+            color: var(--text-color); display: flex; flex-direction: column; gap: 8px;
         }
-        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.8); border-color: rgba(255,255,255,0.1); }
-        .ai-summary-panel h4 { margin: 0 0 6px 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; pointer-events: none;}
-        .ai-summary-text {
-            /* 3行で切り捨てる設定 */
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            pointer-events: none;
-            margin-bottom: 8px;
-        }
-        
-        /* 全体マップ（ミニマップ） */
-        .minimap-container {
-            width: 100%; height: 80px; 
-            background: rgba(0,0,0,0.05); 
-            border-radius: 8px; border: 1px solid rgba(128,128,128,0.2);
-            position: relative; overflow: hidden; cursor: crosshair;
-        }
-        [data-theme="dark"] .minimap-container { background: rgba(255,255,255,0.05); }
+        [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
+        .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
+        .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
+        #canvas-minimap { position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.7; }
 
-        .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff4081; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,64,129,0.4); cursor: pointer; animation: bounceIn 0.5s; }
+        .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
         @keyframes bounceIn { 0% { opacity:0; transform: translateX(-50%) scale(0.8); } 100% { opacity:1; transform: translateX(-50%) scale(1); } }
         
         /* --- キャンバス用ノード --- */
         .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 140px; max-width: 320px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
-        .chat-node.theirs { border-color: rgba(128, 128, 128, 0.2); }
         .chat-node.root-node { border: 3px solid #ff9800; box-shadow: 0 0 20px rgba(255, 152, 0, 0.3); }
         .chat-node.move-mode { border: 2px dashed var(--accent-color); z-index: 200 !important; }
         .chat-node.move-mode .node-header { background: rgba(0, 122, 255, 0.1); }
         
+        /* 操作ハンドル（四隅に配置） */
         .action-handle { display: none; position: absolute; width: 32px; height: 32px; color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 201; pointer-events: auto; }
-        .move-handle { top: -12px; left: -12px; background: #4CAF50; cursor: grab; }
+        .move-handle { top: -12px; left: -12px; background: #4CAF50; cursor: grab; } /* 左上: 移動 */
         .move-handle:active { cursor: grabbing; transform: scale(1.1); }
-        .del-handle { top: -12px; right: -12px; background: #f44336; cursor: pointer; }
-        .link-handle { bottom: -12px; left: -12px; background: #9c27b0; cursor: pointer; }
-        .expand-handle { bottom: -12px; right: -12px; background: #2196f3; cursor: pointer; }
+        .del-handle { top: -12px; right: -12px; background: #f44336; cursor: pointer; } /* 右上: 削除 */
+        .link-handle { bottom: -12px; left: -12px; background: #9c27b0; cursor: pointer; } /* 左下: リンク */
+        .expand-handle { bottom: -12px; right: -12px; background: #2196f3; cursor: pointer; font-size:12px; } /* 右下: 展開 */
         .chat-node.move-mode .action-handle { display: flex; }
 
         .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
@@ -115,26 +101,18 @@
         .text-collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .text-full { display: block; }
 
-        /* --- ツリー用ノード --- */
-        .tree-node { position: absolute; background: transparent; padding: 0; min-width: 50px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; }
-        .tree-node-name { display: flex; align-items: center; font-size: 0.65rem; color: #888; margin-bottom: 2px; font-weight: bold; pointer-events: none; white-space: nowrap; }
-        .tree-node-reply-label { font-size: 0.6rem; color: #9c27b0; background: rgba(156, 39, 176, 0.1); padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; display: inline-block; width: fit-content; border: 1px solid rgba(156, 39, 176, 0.2);}
+        /* --- ツリー用ノード（視認性向上） --- */
+        .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; }
+        .tree-node-name { display: flex; align-items: center; font-size: 0.7rem; color: #666; margin-bottom: 4px; font-weight: bold; pointer-events: none; }
         
-        .tree-node-content { display: inline-block; border-bottom: 2px solid var(--accent-color); padding-bottom: 2px; cursor: pointer; pointer-events: auto; position: relative; background: var(--card-bg); padding: 6px 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .tree-node.mine .tree-node-content { border-bottom-color: #007aff; }
-        .tree-node-content.expandable { border-bottom: 3px dashed #ff9800 !important; }
+        .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 8px 12px; border-radius: 8px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .tree-node.mine .tree-node-content { border-left-color: #4CAF50; }
 
-        .tree-node-text { font-size: 0.95rem; font-weight: bold; color: var(--text-color); line-height: 1.3; word-break: break-word; }
+        .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; }
         
-        .tree-node .text-collapsed { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 220px; transition: max-width 0.3s; }
-        .tree-node .text-full { display: none; }
-        .tree-node.expanded .text-collapsed { display: none; }
-        .tree-node.expanded .text-full { display: block; animation: fadeIn 0.3s forwards; background: var(--card-bg); padding: 8px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: absolute; top: 100%; left: 0; min-width: 200px; z-index: 100; border: 1px solid rgba(128,128,128,0.2); backdrop-filter: blur(10px); }
-        .tree-node.expanded { z-index: 101 !important; }
-
-        .tree-controls { display: flex; gap: 4px; position: absolute; right: -50px; top: 0; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .tree-controls { display: flex; gap: 4px; position: absolute; right: -40px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .tree-node:hover .tree-controls { opacity: 1; pointer-events: auto; }
-        .tree-btn { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tree-btn { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
         .linking-indicator { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #9c27b0; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); }
 
@@ -144,11 +122,14 @@
         .reply-indicator { display: none; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(0, 122, 255, 0.1); color: var(--accent-color); font-size: 0.85rem; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
-        .modal-content { background: #fff; color: #333; width: 100%; max-width: 400px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: #fff; color: #333; width: 100%; max-width: 380px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; max-height: 85vh; overflow-y: auto; }
         .settings-container { overflow-y: auto; padding: 15px; flex-grow:1; -webkit-overflow-scrolling: touch; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-size: 0.9rem; font-weight: bold; opacity: 0.8; margin-bottom: 6px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid rgba(128,128,128,0.3); border-radius: 12px; font-size: 1rem; }
+        
+        .contact-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:8px; border:1px solid #eee; }
+        .contact-item button { padding:6px 12px; border-radius:8px; font-weight:bold; }
     </style>
 </head>
 <body data-theme="default">
@@ -157,9 +138,9 @@
     <div class="app-header">
         <h1 id="app-title-display">Node Canvas Chat</h1>
         <div style="display: flex; gap: 6px;">
-            <button id="btn-export-canvas" onclick="exportCanvasImage()" style="display:none; padding:8px 12px; background:rgba(76, 175, 80, 0.1); color:#4CAF50; border-radius:10px; font-weight:bold;">📸 保存</button>
-            <button id="btn-manage-tree" onclick="openTreeManageModal()" style="display:none; padding:8px 12px; background:rgba(255,152,0,0.1); color:#ff9800; border-radius:10px; font-weight:bold;">🌳 切替</button>
-            <button id="btn-clear-canvas" onclick="clearCanvas()" style="display:none; padding:8px 12px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold;">🧹</button>
+            <button id="btn-export-canvas" onclick="exportCanvasAsImage()" style="display:none; padding:8px 12px; background:rgba(0,122,255,0.1); color:#007aff; border-radius:10px; font-weight:bold;">📷 保存</button>
+            <button id="btn-manage-tree" onclick="openTreeManageModal()" style="display:none; padding:8px 12px; background:rgba(255,152,0,0.1); color:#ff9800; border-radius:10px; font-weight:bold;">🌳 ツリー切替</button>
+            <button id="btn-clear-canvas" onclick="clearCanvas()" style="display:none; padding:8px 12px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold;">🧹 消去</button>
             <button onclick="resetWorkspaceView()" style="padding:8px 12px; background:rgba(128,128,128,0.15); border-radius:10px; font-weight:bold; color:var(--text-color);">🏠</button>
         </div>
     </div>
@@ -184,14 +165,15 @@
 
 <div id="tab-canvas" class="tab-content active">
     <div class="online-indicator" id="online-indicator-canvas">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 参加者</div>
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 接続状況</div>
         <div id="online-list-canvas" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
+    
     <div class="ai-summary-panel" id="canvas-summary-panel" style="display:none;">
-        <h4>🧠 AI 話題まとめ</h4>
-        <div class="ai-summary-text"></div>
-        <div class="minimap-container" onpointerdown="handleMinimapClick(event, 'canvas')">
-            <canvas id="minimap-canvas" style="width: 100%; height: 100%; pointer-events: none;"></canvas>
+        <h4>🧠 3行まとめ</h4>
+        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;"></div>
+        <div class="minimap-container">
+            <canvas id="canvas-minimap"></canvas>
         </div>
     </div>
 
@@ -220,15 +202,12 @@
 
 <div id="tab-tree" class="tab-content">
     <div class="online-indicator" id="online-indicator-tree">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 参加者</div>
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 接続状況</div>
         <div id="online-list-tree" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
     <div class="ai-summary-panel" id="tree-summary-panel" style="display:none;">
-        <h4>🧠 AI 話題まとめ</h4>
-        <div class="ai-summary-text"></div>
-        <div class="minimap-container" onpointerdown="handleMinimapClick(event, 'tree')">
-            <canvas id="minimap-tree" style="width: 100%; height: 100%; pointer-events: none;"></canvas>
-        </div>
+        <h4>🧠 3行まとめ</h4>
+        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;"></div>
     </div>
 
     <div class="workspace-container" id="tree-workspace">
@@ -257,7 +236,7 @@
 <div id="tab-settings" class="tab-content">
     <div class="settings-container">
         <div class="glass-card" style="padding: 15px; margin-bottom: 15px;">
-            <h3 style="margin-top:0; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:5px;">👤 プロフィール</h3>
+            <h3 style="margin-top:0; border-bottom:1px solid rgba(128,128,128,0.2); padding-bottom:5px;">👤 プロフィール（必須）</h3>
             <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
                 <img id="profile-icon-preview" src="" style="width:60px; height:60px; border-radius:50%; object-fit:cover; background:#ccc; border:2px solid var(--accent-color);">
                 <input type="file" id="icon-upload-input" accept="image/*" style="display:none;" onchange="autoCropAndSaveIcon(this)">
@@ -309,39 +288,21 @@
 
 <div id="connect-modal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--accent-color); text-align:center;">📡 接続・ルーム管理</h3>
+        <h3 style="margin-top:0; color:var(--accent-color); text-align:center;">📡 接続 / ルーム選択</h3>
+        <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:10px; text-align:center; margin-bottom:15px;">
+            <div style="font-size:0.8rem; font-weight:bold; color:#666;">あなたのID</div>
+            <div id="p2p-my-id-display" style="font-size:1.8rem; font-weight:900; letter-spacing:4px; color:var(--accent-color);">----</div>
+        </div>
         
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button id="tab-btn-modal-contact" onclick="switchModalTab('contact')" style="flex:1; padding:8px; border-bottom:3px solid var(--accent-color); font-weight:bold; background:none; color:var(--text-color);">個別チャット</button>
-            <button id="tab-btn-modal-room" onclick="switchModalTab('room')" style="flex:1; padding:8px; border-bottom:3px solid transparent; font-weight:bold; background:none; color:#888;">複数人ルーム</button>
+        <div style="margin-bottom:20px; border:1px solid #ddd; padding:10px; border-radius:10px;">
+            <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;">個別に繋ぐ / ルームを作る (複数人)</div>
+            <input type="text" id="p2p-target-id" placeholder="相手ID (複数人はカンマ区切り)" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1rem; margin-bottom:8px; box-sizing:border-box;">
+            <input type="text" id="room-name-input" placeholder="ルーム名 (複数人の場合)" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(128,128,128,0.3); font-size:0.9rem; margin-bottom:8px; box-sizing:border-box;">
+            <button onclick="connectNewContact()" style="width:100%; padding:10px; background:var(--accent-color); color:white; font-weight:900; border-radius:10px;">接続・作成</button>
         </div>
 
-        <div id="modal-tab-contact">
-            <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:10px; text-align:center; margin-bottom:15px;">
-                <div style="font-size:0.8rem; font-weight:bold; color:#666;">あなたの個別ID</div>
-                <div id="p2p-my-id-display" style="font-size:1.8rem; font-weight:900; letter-spacing:4px; color:var(--accent-color);">----</div>
-            </div>
-            <div style="display:flex; gap:8px; margin-bottom:20px;">
-                <input type="text" id="p2p-target-id" placeholder="相手ID" style="width:90px; padding:12px 5px; border-radius:10px; border:2px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1.1rem; text-align:center;" inputmode="numeric" maxlength="4">
-                <button onclick="connectNewContact()" style="flex:1; background:var(--accent-color); color:white; font-weight:900; border-radius:10px;">新しく繋ぐ</button>
-            </div>
-            <h4 style="margin:0 0 10px 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:5px;">履歴・連絡帳</h4>
-            <div id="contacts-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
-        </div>
-
-        <div id="modal-tab-room" style="display:none;">
-            <div style="background:rgba(156, 39, 176, 0.05); padding:10px; border-radius:10px; text-align:center; margin-bottom:15px;">
-                <button onclick="createRoom()" style="width:100%; padding:12px; background:#9c27b0; color:white; font-weight:bold; border-radius:10px; margin-bottom:10px;">✨ 新しいルームを作成（ホストになる）</button>
-                <div style="font-size:0.75rem; color:#666;">※ホストが退出するとルームは閉じられます。</div>
-            </div>
-            <div style="display:flex; gap:8px; margin-bottom:20px;">
-                <input type="text" id="p2p-room-id" placeholder="ROOM-..." style="flex:1; padding:12px 10px; border-radius:10px; border:2px solid rgba(128,128,128,0.3); font-weight:bold; font-size:1rem;">
-                <button onclick="joinRoom()" style="background:#4CAF50; color:white; font-weight:900; border-radius:10px; padding:0 15px;">入室</button>
-            </div>
-            <h4 style="margin:0 0 10px 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:5px;">マイルーム履歴</h4>
-            <div id="rooms-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
-        </div>
-
+        <h4 style="margin:0 0 10px 0; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:5px;">履歴・連絡帳</h4>
+        <div id="contacts-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
         <button onclick="closeConnectModal()" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); color:#333; border-radius:10px; font-weight:bold;">閉じる</button>
     </div>
 </div>
@@ -360,25 +321,20 @@
     const STORE_NAME = 'appState';
     const DB_VERSION = 1;
 
+    // isRoomフラグとmembers配列で複数人チャットを管理
     let appData = { 
-        theme: 'default', userName: 'Sumito', userIcon: '', openAiKey: '',
+        theme: 'default', userName: 'ゲスト', userIcon: '', openAiKey: '',
         bgImage: '', bgOpacity: 0.2,
-        myP2pId: '', contacts: {}, rooms: {}
+        myP2pId: '', contacts: {}, 
     };
     
-    // 現在のチャットモード
-    let activeChatMode = null; // 'contact' or 'room'
-    let activeChatId = null;   // contactId or roomId
-
     let activeConnections = {}; 
-    let activeRoomPeers = {}; // Room用の中継先Peerリスト { peerId: conn }
-    let roomMembersInfo = {}; // Room内のユーザー情報 { peerId: {name, icon} }
-
+    let activeContactId = null; 
     let targetPanCoords = null; 
     let linkingSourceId = null;
     let activeTreeRootId = null; 
     let currentAttachedFile = null; 
-    let newMessages = []; // ミニマップ通知用
+    let minimapAnimationId = null;
     
     // オフライン・リアルタイム検知用
     let heartbeatTimer = null;
@@ -432,7 +388,6 @@
     function initializeApp() {
         if (!appData.myP2pId) { appData.myP2pId = Math.floor(1000 + Math.random() * 9000).toString(); saveData(); }
         if (!appData.contacts) appData.contacts = {}; 
-        if (!appData.rooms) appData.rooms = {}; 
 
         document.getElementById('setting-username').value = appData.userName;
         document.getElementById('setting-openai-key').value = appData.openAiKey || '';
@@ -445,6 +400,9 @@
         initWorkspaces();
         startHeartbeat(); 
         
+        // ミニマップループ開始
+        updateMinimap();
+
         const activeTab = document.querySelector('.tab.active');
         if(activeTab) {
             document.getElementById('tab-highlight').style.width = activeTab.offsetWidth + 'px';
@@ -453,18 +411,6 @@
     }
 
     window.onload = loadData;
-
-    // --- ユーティリティ ---
-    function getActiveData() {
-        if (activeChatMode === 'room' && activeChatId) {
-            if (!appData.rooms[activeChatId]) appData.rooms[activeChatId] = { name: activeChatId, host: activeChatId.split('-')[1], canvasNodes: [], treeNodes: [] };
-            return appData.rooms[activeChatId];
-        } else if (activeChatMode === 'contact' && activeChatId) {
-            if (!appData.contacts[activeChatId]) appData.contacts[activeChatId] = { name: "ID:"+activeChatId, icon: "", canvasNodes: [], treeNodes: [] };
-            return appData.contacts[activeChatId];
-        }
-        return null;
-    }
 
     // --- UI/テーマ ---
     let currentTab = 'canvas';
@@ -483,25 +429,23 @@
 
         currentTab = id.replace('tab-', '');
         
-        document.getElementById('btn-clear-canvas').style.display = currentTab === 'canvas' && activeChatId ? 'block' : 'none';
-        document.getElementById('btn-export-canvas').style.display = currentTab === 'canvas' && activeChatId ? 'block' : 'none';
-        document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' && activeChatId ? 'block' : 'none';
+        const isConnected = !!activeContactId;
+        document.getElementById('btn-clear-canvas').style.display = (currentTab === 'canvas' && isConnected) ? 'block' : 'none';
+        document.getElementById('btn-manage-tree').style.display = (currentTab === 'tree' && isConnected) ? 'block' : 'none';
+        document.getElementById('btn-export-canvas').style.display = (currentTab === 'canvas' && isConnected) ? 'block' : 'none';
         
-        if(currentTab === 'canvas' || currentTab === 'tree') {
-            renderWorkspace(currentTab);
-            updateMinimap(currentTab);
-        }
+        if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
     }
 
     function handleCanvasTabClick(tabEl) {
-        if (tabEl.classList.contains('active') && activeChatId) {
+        if (tabEl.classList.contains('active') && activeContactId) {
             if(confirm("現在のトーク画面を閉じますか？\n(履歴は残ります)")) {
-                activeChatId = null; activeChatMode = null; updateTabUI(); renderWorkspace(currentTab); 
+                activeContactId = null; updateTabUI(); renderWorkspace(currentTab); 
             }
             return;
         }
         switchTab('tab-canvas', tabEl);
-        if (!activeChatId) openConnectModal();
+        if (!activeContactId) openConnectModal();
     }
     
     async function hardResetApp() { 
@@ -547,33 +491,33 @@
         const panel = document.getElementById(`${space}-summary-panel`);
         if(!panel) return;
         if(!summaryText) {
-            panel.querySelector('.ai-summary-text').innerHTML = "まだ話題がありません。";
-            panel.style.display = activeChatId ? 'block' : 'none';
+            panel.style.display = 'none';
         } else {
-            panel.style.display = 'block';
+            panel.style.display = 'flex';
             panel.querySelector('.ai-summary-text').innerHTML = summaryText.replace(/\n/g, '<br>');
         }
-        updateMinimap(space);
     }
 
     function updateTabUI() {
         const tabBtn = document.getElementById('tab-btn-canvas');
-        if(activeChatId) {
-            const d = getActiveData();
-            if (activeChatMode === 'room') {
-                tabBtn.innerHTML = `🌐 ルーム (${d.name || activeChatId})`; 
-                tabBtn.classList.add('room-connected');
+        if(activeContactId && appData.contacts[activeContactId]) {
+            const contact = appData.contacts[activeContactId];
+            
+            // ルーム（複数人）か1on1かで表示を変える
+            if (contact.isRoom) {
+                tabBtn.innerHTML = `🏰 ルーム (${contact.name})`;
+                tabBtn.classList.add('room');
                 tabBtn.classList.remove('offline', 'connected');
             } else {
-                const isOnline = connectionStatus[activeChatId] && connectionStatus[activeChatId].isOnline;
+                const isOnline = connectionStatus[activeContactId] && connectionStatus[activeContactId].isOnline;
                 if (isOnline) {
-                    tabBtn.innerHTML = `🟢 接続中 (${d.name})`; 
+                    tabBtn.innerHTML = `🟢 接続中 (${contact.name})`; 
                     tabBtn.classList.add('connected');
-                    tabBtn.classList.remove('offline', 'room-connected');
+                    tabBtn.classList.remove('offline', 'room');
                 } else {
-                    tabBtn.innerHTML = `🔴 オフライン (${d.name})`; 
+                    tabBtn.innerHTML = `🔴 オフライン (${contact.name})`; 
+                    tabBtn.classList.remove('connected', 'room');
                     tabBtn.classList.add('offline');
-                    tabBtn.classList.remove('connected', 'room-connected');
                 }
             }
             
@@ -582,15 +526,14 @@
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
             
             if(currentTab === 'canvas') {
-                updateSummaryPanel(d.canvasSummary, 'canvas');
+                updateSummaryPanel(contact.canvasSummary, 'canvas');
             } else if (currentTab === 'tree' && activeTreeRootId) {
-                const rNode = d.treeNodes.find(n => n.id === activeTreeRootId);
+                const rNode = contact.treeNodes.find(n => n.id === activeTreeRootId);
                 updateSummaryPanel(rNode ? rNode.treeSummary : "", 'tree');
             }
-            updateOnlineIndicator();
         } else {
             tabBtn.innerHTML = "🎨 キャンバス"; 
-            tabBtn.classList.remove('connected', 'offline', 'room-connected');
+            tabBtn.classList.remove('connected', 'offline', 'room');
             document.getElementById('btn-clear-canvas').style.display = 'none';
             document.getElementById('btn-export-canvas').style.display = 'none';
             document.getElementById('btn-manage-tree').style.display = 'none';
@@ -600,13 +543,93 @@
         setTimeout(() => { if(tabBtn.classList.contains('active')) document.getElementById('tab-highlight').style.width = tabBtn.offsetWidth + 'px'; }, 50);
     }
 
-    // --- P2P & ルーム接続ロジック ---
+    // --- 画像書き出し（html2canvas） ---
+    async function exportCanvasAsImage() {
+        if(!activeContactId) return;
+        const btn = document.getElementById('btn-export-canvas');
+        btn.innerText = "⏳ 処理中...";
+        try {
+            const canvasNodesLayer = document.getElementById('canvas-layer');
+            // 一時的に全体のバウンディングボックスを取得してキャプチャ範囲を特定する
+            const nodes = appData.contacts[activeContactId].canvasNodes || [];
+            if(nodes.length === 0) { alert('書き出すノードがありません'); btn.innerText="📷 保存"; return; }
+            
+            let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+            nodes.forEach(n => {
+                if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
+                if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
+            });
+            // マージン
+            minX -= 50; minY -= 50; maxX += 400; maxY += 400;
+
+            const originalTransform = canvasNodesLayer.style.transform;
+            // キャプチャ用に一時的に移動
+            canvasNodesLayer.style.transform = `translate(${-minX}px, ${-minY}px)`;
+            
+            // width/heightを指定してキャプチャ
+            const canvas = await html2canvas(canvasNodesLayer, { 
+                backgroundColor: appData.theme === 'dark' ? '#1a1a1a' : '#f0f4f8',
+                width: maxX - minX,
+                height: maxY - minY,
+                scale: 1.5 // 少し高画質に
+            });
+            
+            // 元に戻す
+            canvasNodesLayer.style.transform = originalTransform;
+            
+            const link = document.createElement('a');
+            link.download = `Canvas_${formatTime(Date.now()).replace(/[\/ :]/g, '')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch(e) {
+            console.error(e);
+            alert("画像書き出しに失敗しました");
+        } finally {
+            btn.innerText = "📷 保存";
+        }
+    }
+
+    // --- ファイル添付 ---
+    function handleFileSelect(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentAttachedFile = {
+                name: file.name,
+                type: file.type,
+                isImage: file.type.startsWith('image/'),
+                dataBase64: e.target.result
+            };
+            showFilePreview();
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    function showFilePreview() {
+        if(!currentAttachedFile) return;
+        const content = document.getElementById('global-input-preview-content');
+        if(currentAttachedFile.isImage) {
+            content.innerHTML = `<img src="${currentAttachedFile.dataBase64}" style="height:30px; border-radius:4px; vertical-align:middle;"> <span style="vertical-align:middle;">画像を添付中...</span>`;
+        } else {
+            content.innerHTML = `📎 ${currentAttachedFile.name}`;
+        }
+        document.getElementById('global-input-preview-area').style.display = 'block';
+    }
+
+    function removeAttachedFile() {
+        currentAttachedFile = null;
+        document.getElementById('global-input-preview-area').style.display = 'none';
+    }
+
+    // --- P2P & 履歴閲覧 & 同期ロジック ---
     let peer = null;
 
     function initP2P() {
-        peer = new Peer("ncchat2-" + appData.myP2pId, { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } });
+        peer = new Peer("ncchat3-" + appData.myP2pId, { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } });
         peer.on('connection', (connection) => {
-            const targetId = connection.peer.replace("ncchat2-", "");
+            const targetId = connection.peer.replace("ncchat3-", "");
             setupP2PConnection(targetId, connection, false);
         });
     }
@@ -615,45 +638,24 @@
         if (heartbeatTimer) return;
         heartbeatTimer = setInterval(() => {
             const now = Date.now();
-            // 個別コネクションの監視
             Object.keys(activeConnections).forEach(targetId => {
                 const conn = activeConnections[targetId];
                 const status = connectionStatus[targetId];
                 if (conn && conn.open) {
                     conn.send({ type: 'ping' });
                     if (status && (now - status.lastPong > 10000)) {
-                        if (status.isOnline) { status.isOnline = false; updateOnlineIndicator(); updateTabUI(); }
+                        if (status.isOnline) { status.isOnline = false; updateOnlineIndicator(); }
                     }
                 } else {
-                    if (status && status.isOnline) { status.isOnline = false; updateOnlineIndicator(); updateTabUI(); }
+                    if (status && status.isOnline) { status.isOnline = false; updateOnlineIndicator(); }
                 }
             });
-            // ルームメンバー（ホスト経由の参加者）の監視
-            if (activeChatMode === 'room' && isHost(activeChatId)) {
-                Object.keys(activeRoomPeers).forEach(peerId => {
-                    const conn = activeRoomPeers[peerId];
-                    if (conn && conn.open) conn.send({ type: 'ping' });
-                    else delete activeRoomPeers[peerId];
-                });
-                broadcastRoomMembers(); // 参加者リストを定期更新して送信
-            }
         }, 3000);
-    }
-
-    function switchModalTab(tab) {
-        document.getElementById('tab-btn-modal-contact').style.borderBottomColor = tab === 'contact' ? 'var(--accent-color)' : 'transparent';
-        document.getElementById('tab-btn-modal-contact').style.color = tab === 'contact' ? 'var(--text-color)' : '#888';
-        document.getElementById('tab-btn-modal-room').style.borderBottomColor = tab === 'room' ? 'var(--accent-color)' : 'transparent';
-        document.getElementById('tab-btn-modal-room').style.color = tab === 'room' ? 'var(--text-color)' : '#888';
-        
-        document.getElementById('modal-tab-contact').style.display = tab === 'contact' ? 'block' : 'none';
-        document.getElementById('modal-tab-room').style.display = tab === 'room' ? 'block' : 'none';
     }
 
     function openConnectModal() {
         document.getElementById('p2p-my-id-display').innerText = appData.myP2pId;
         renderContactsList();
-        renderRoomsList();
         document.getElementById('connect-modal').style.display = 'flex';
     }
     function closeConnectModal() { document.getElementById('connect-modal').style.display = 'none'; }
@@ -662,357 +664,316 @@
         const list = document.getElementById('contacts-list'); list.innerHTML = '';
         Object.keys(appData.contacts).forEach(id => {
             const contact = appData.contacts[id];
-            const isOnline = connectionStatus[id] && connectionStatus[id].isOnline;
+            
+            let statusHtml = '';
+            if (contact.isRoom) {
+                statusHtml = '<span style="color:#9c27b0; font-size:0.7rem;">(ルーム)</span>';
+            } else {
+                const isOnline = connectionStatus[id] && connectionStatus[id].isOnline;
+                statusHtml = isOnline ? '<span style="color:#4CAF50; font-size:0.7rem;">(オンライン)</span>' : '<span style="color:#9e9e9e; font-size:0.7rem;">(オフライン)</span>';
+            }
+
             list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:10px; background:rgba(0,0,0,0.03); border-radius:10px;">
+            <div class="contact-item">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="${contact.icon || ''}" style="width:36px; height:36px; border-radius:50%; background:#ccc; object-fit:cover;">
-                    <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> ${isOnline ? '<span style="color:#4CAF50; font-size:0.7rem;">(オンライン)</span>' : '<span style="color:#9e9e9e; font-size:0.7rem;">(オフライン)</span>'}</div>
+                    ${contact.isRoom ? '<div style="width:36px; height:36px; border-radius:50%; background:#e1bee7; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🏰</div>' : `<img src="${contact.icon || ''}" style="width:36px; height:36px; border-radius:50%; background:#ccc; object-fit:cover;">`}
+                    <div><strong style="color:var(--accent-color);">${contact.name || 'ゲスト'}</strong> ${statusHtml}</div>
                 </div>
-                <button onclick="openContactHistory('${id}')" style="padding:6px 12px; background:#2196F3; color:white; font-weight:bold; border-radius:10px;">繋ぐ</button>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="openContactHistory('${id}')" style="background:#2196F3; color:white;">開く</button>
+                    <button onclick="deleteContact('${id}')" style="background:#f44336; color:white;">🗑</button>
+                </div>
             </div>`;
         });
     }
 
-    function renderRoomsList() {
-        const list = document.getElementById('rooms-list'); list.innerHTML = '';
-        Object.keys(appData.rooms).forEach(id => {
-            const room = appData.rooms[id];
-            list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:10px; background:rgba(156,39,176,0.05); border-radius:10px;">
-                <div><strong style="color:#9c27b0;">${room.name || id}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${id}</span></div>
-                <button onclick="openRoomHistory('${id}')" style="padding:6px 12px; background:#9c27b0; color:white; font-weight:bold; border-radius:10px;">入室</button>
-            </div>`;
-        });
+    function deleteContact(id) {
+        if(confirm("この連絡先（ルーム）と履歴を削除しますか？")) {
+            delete appData.contacts[id];
+            saveData();
+            if(activeContactId === id) {
+                activeContactId = null;
+                updateTabUI();
+                renderWorkspace(currentTab);
+            }
+            renderContactsList();
+        }
     }
 
-    // --- 個別チャット処理 ---
     function connectNewContact() {
-        const targetId = document.getElementById('p2p-target-id').value.trim();
-        if(!targetId || targetId.length !== 4) return alert('4桁の数値を入力してください');
-        if(targetId === appData.myP2pId) return alert('自分のIDです');
-        openContactHistory(targetId);
+        if(!appData.userIcon) {
+            alert("先に設定タブでプロフィール写真を登録してください。（必須）");
+            closeConnectModal();
+            switchTab('tab-settings', document.getElementById('tab-btn-settings'));
+            return;
+        }
+
+        const inputIds = document.getElementById('p2p-target-id').value.trim();
+        const roomName = document.getElementById('room-name-input').value.trim();
+        
+        if(!inputIds) return alert('IDを入力してください');
+        
+        const ids = inputIds.split(',').map(s=>s.trim()).filter(s=>s.length>0);
+        
+        if (ids.length === 1 && !roomName) {
+            // 1on1
+            if(ids[0] === appData.myP2pId) return alert('自分のIDです');
+            openContactHistory(ids[0]);
+        } else {
+            // Room
+            const roomId = "ROOM-" + Date.now();
+            const members = ids.filter(id => id !== appData.myP2pId);
+            appData.contacts[roomId] = { 
+                isRoom: true, 
+                name: roomName || "グループチャット", 
+                members: members, 
+                canvasNodes: [], treeNodes: [] 
+            };
+            saveData();
+            openContactHistory(roomId);
+        }
     }
 
     function openContactHistory(targetId) {
         closeConnectModal();
-        activeChatMode = 'contact';
-        activeChatId = targetId; 
+        activeContactId = targetId; 
         
-        // 切替時に不要なコネクションは維持しても良いが、UI状態をリセット
-        roomMembersInfo = {};
-        
-        if(!appData.contacts[targetId]) { appData.contacts[targetId] = { name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; saveData(); }
-        if (!connectionStatus[targetId]) connectionStatus[targetId] = { lastPong: 0, isOnline: false };
+        const contact = appData.contacts[targetId];
+        if(!contact) { 
+            // 1on1
+            appData.contacts[targetId] = { isRoom: false, name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; 
+            saveData(); 
+        }
         
         updateTabUI(); 
         renderWorkspace(currentTab);
         
-        if (!activeConnections[targetId] || !activeConnections[targetId].open) {
-            const conn = peer.connect("ncchat2-" + targetId, { reliable: true });
-            setupP2PConnection(targetId, conn, true);
-        }
-    }
-
-    // --- ルーム処理 ---
-    function isHost(roomId) {
-        return roomId && roomId.split('-')[1] === appData.myP2pId;
-    }
-
-    function createRoom() {
-        const roomId = `ROOM-${appData.myP2pId}-${Math.floor(Math.random()*1000)}`;
-        if(!appData.rooms[roomId]) {
-            appData.rooms[roomId] = { name: "マイルーム", host: appData.myP2pId, canvasNodes: [], treeNodes: [] };
-            saveData();
-        }
-        openRoomHistory(roomId);
-    }
-
-    function joinRoom() {
-        const roomId = document.getElementById('p2p-room-id').value.trim();
-        if(!roomId.startsWith('ROOM-')) return alert('ROOM- から始まる正しいIDを入力してください');
-        openRoomHistory(roomId);
-    }
-
-    function openRoomHistory(roomId) {
-        closeConnectModal();
-        activeChatMode = 'room';
-        activeChatId = roomId;
-        
-        if(!appData.rooms[roomId]) { appData.rooms[roomId] = { name: "参加ルーム", host: roomId.split('-')[1], canvasNodes: [], treeNodes: [] }; saveData(); }
-        
-        roomMembersInfo = {}; // 自身を追加
-        roomMembersInfo[appData.myP2pId] = { name: appData.userName, icon: appData.userIcon };
-
-        updateTabUI();
-        renderWorkspace(currentTab);
-
-        if (isHost(roomId)) {
-            // 自分がホストなら他の人の接続を待つのみ
-            updateOnlineIndicator();
-        } else {
-            // ホストへ接続
-            const hostId = roomId.split('-')[1];
-            if (!activeConnections[hostId] || !activeConnections[hostId].open) {
-                const conn = peer.connect("ncchat2-" + hostId, { reliable: true });
-                setupP2PConnection(hostId, conn, true, roomId);
+        // 接続処理
+        const peersToConnect = contact?.isRoom ? contact.members : [targetId];
+        peersToConnect.forEach(peerId => {
+            if (!connectionStatus[peerId]) connectionStatus[peerId] = { lastPong: 0, isOnline: false };
+            if (!activeConnections[peerId] || !activeConnections[peerId].open) {
+                const conn = peer.connect("ncchat3-" + peerId, { reliable: true });
+                setupP2PConnection(peerId, conn, true);
             } else {
-                // すでに接続済みの場合は入室を通知
-                activeConnections[hostId].send({ type: 'join_room', roomId, userInfo: { name: appData.userName, icon: appData.userIcon } });
-            }
-        }
-    }
-
-    // --- 通信と同期 ---
-    function setupP2PConnection(targetId, conn, isInitiator, joiningRoomId = null) {
-        conn.on('open', () => {
-            activeConnections[targetId] = conn;
-            connectionStatus[targetId] = { lastPong: Date.now(), isOnline: true };
-            
-            // 通常の個別情報交換
-            conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
-            
-            // ルーム参加の場合
-            if (joiningRoomId) {
-                conn.send({ type: 'join_room', roomId: joiningRoomId, userInfo: { name: appData.userName, icon: appData.userIcon } });
-            } else if (activeChatMode === 'contact' && activeChatId === targetId) {
-                initiateSync(targetId);
-            }
-            
-            updateOnlineIndicator();
-            if (activeChatMode === 'contact' && activeChatId === targetId) updateTabUI();
-        });
-
-        conn.on('data', async (data) => {
-            // Ping / Pong
-            if (data.type === 'ping') { conn.send({ type: 'pong' }); return; }
-            if (data.type === 'pong') {
-                if(connectionStatus[targetId]) {
-                    connectionStatus[targetId].lastPong = Date.now();
-                    if (!connectionStatus[targetId].isOnline) {
-                        connectionStatus[targetId].isOnline = true;
-                        if(activeChatMode === 'contact' && activeChatId === targetId) { updateOnlineIndicator(); updateTabUI(); initiateSync(targetId); }
-                    }
-                }
-                return;
-            }
-
-            // ルーム関連処理 (ホスト側)
-            if (data.type === 'join_room') {
-                if (isHost(data.roomId)) {
-                    activeRoomPeers[targetId] = conn; // クライアントを登録
-                    roomMembersInfo[targetId] = data.userInfo;
-                    // クライアントへ現在の部屋のデータを送信
-                    const room = appData.rooms[data.roomId];
-                    conn.send({ type: 'room_sync_full', roomId: data.roomId, payload: { canvasNodes: room.canvasNodes, treeNodes: room.treeNodes, members: roomMembersInfo } });
-                    broadcastRoomMembers();
-                    updateOnlineIndicator();
-                }
-                return;
-            }
-            // ルームメンバーリスト更新 (クライアント側)
-            if (data.type === 'room_members_update') {
-                if (activeChatMode === 'room' && activeChatId === data.roomId) {
-                    roomMembersInfo = data.members;
-                    updateOnlineIndicator();
-                }
-                return;
-            }
-            // ルーム全データ同期 (クライアント側)
-            if (data.type === 'room_sync_full') {
-                if (activeChatMode === 'room' && activeChatId === data.roomId) {
-                    const room = appData.rooms[data.roomId];
-                    room.canvasNodes = data.payload.canvasNodes;
-                    room.treeNodes = data.payload.treeNodes;
-                    roomMembersInfo = data.payload.members;
-                    saveData();
-                    renderWorkspace(currentTab);
-                    updateOnlineIndicator();
-                }
-                return;
-            }
-            
-            // 以下はノードデータ関連
-            // ホストなら中継する
-            if (data.roomId && isHost(data.roomId) && activeChatId === data.roomId) {
-                broadcastToRoom(data, targetId); // 送信元以外にブロードキャスト
-            }
-
-            // 個別チャット、または自分が参加しているルームのデータ処理
-            const dataTargetMode = data.roomId ? 'room' : 'contact';
-            const dataTargetId = data.roomId ? data.roomId : targetId;
-            const contextData = dataTargetMode === 'room' ? appData.rooms[dataTargetId] : appData.contacts[dataTargetId];
-            
-            if(!contextData) return;
-
-            if (data.type === 'system_info') {
-                if(dataTargetMode === 'contact') {
-                    contextData.name = data.payload.name;
-                    if(data.payload.icon) contextData.icon = data.payload.icon;
-                    saveData(); updateOnlineIndicator();
-                    if(activeChatId === targetId) updateTabUI();
-                }
-            } else if (data.type === 'new_node') {
-                const { space, node } = data.payload;
-                node.isMine = false;
-                contextData[`${space}Nodes`].push(node);
-                saveData();
-                if (activeChatId === dataTargetId) {
-                    newMessages.push(node.id); // 新着通知用
-                    renderWorkspace(currentTab);
-                    if (currentTab === space) {
-                        const vs = viewStates[space];
-                        const cont = document.getElementById(`${space}-workspace`);
-                        const screenX = ((node.x) * vs.scale) + vs.panX;
-                        const screenY = ((node.y) * vs.scale) + vs.panY;
-                        if (screenX < 0 || screenX > cont.offsetWidth || screenY < 0 || screenY > cont.offsetHeight) {
-                            showNewMessageNav(node.x, node.y, space);
-                        }
-                    }
-                }
-            } else if (data.type === 'update_node') {
-                const { space, node } = data.payload;
-                const idx = contextData[`${space}Nodes`].findIndex(n => n.id === node.id);
-                if(idx !== -1) {
-                    node.isMine = false; 
-                    contextData[`${space}Nodes`][idx] = node;
-                    saveData();
-                    if(activeChatId === dataTargetId && currentTab === space) renderWorkspace(space);
-                }
-            } else if (data.type === 'delete_node') {
-                const { space, id } = data.payload;
-                contextData[`${space}Nodes`] = contextData[`${space}Nodes`].filter(n => n.id !== id);
-                contextData[`${space}Nodes`].forEach(n => { if(n.parentId === id) n.parentId = null; });
-                saveData();
-                if(activeChatId === dataTargetId) {
-                    if(space === 'canvas') refreshCanvasSummaryAI();
-                    renderWorkspace(currentTab);
-                }
-            } else if (data.type === 'clear_canvas') {
-                contextData.canvasNodes = []; saveData();
-                if(activeChatId === dataTargetId && currentTab === 'canvas') { renderWorkspace('canvas'); refreshCanvasSummaryAI(); }
-            } else if (data.type === 'update_summary') {
-                if (data.payload.space === 'canvas') {
-                    contextData.canvasSummary = data.payload.summary;
-                    if(activeChatId === dataTargetId && currentTab === 'canvas') updateSummaryPanel(data.payload.summary, 'canvas');
-                } else if (data.payload.space === 'tree') {
-                    const tNode = contextData.treeNodes.find(n => n.id === data.payload.rootId);
-                    if(tNode) tNode.treeSummary = data.payload.summary;
-                    if(activeChatId === dataTargetId && currentTab === 'tree' && activeTreeRootId === data.payload.rootId) {
-                        updateSummaryPanel(data.payload.summary, 'tree');
-                    }
-                }
-                saveData();
-            } else if (data.type === 'toggle_collapse') {
-                const tNode = contextData.treeNodes.find(n => n.id === data.payload.id);
-                if(tNode) { tNode.isCollapsed = data.payload.isCollapsed; saveData(); if(activeChatId === dataTargetId && currentTab === 'tree') renderWorkspace('tree'); }
-            }
-            
-            // 個別の同期ロジック (Sync) は省略なし（元のまま維持）
-            else if (data.type === 'sync_check' && dataTargetMode === 'contact') {
-                const theirCanvasIds = (data.payload.canvas || []).map(k => k.id);
-                const theirTreeIds = (data.payload.tree || []).map(k => k.id);
-                const myCanvas = contextData.canvasNodes || [];
-                const myTree = contextData.treeNodes || [];
-                const pushCanvas = myCanvas.filter(n => !theirCanvasIds.includes(n.id));
-                const pushTree = myTree.filter(n => !theirTreeIds.includes(n.id));
-                const myCanvasIds = myCanvas.map(n => n.id);
-                const myTreeIds = myTree.map(n => n.id);
-                const pullCanvasIds = (data.payload.canvas || []).filter(k => !myCanvasIds.includes(k.id)).map(k => k.id);
-                const pullTreeIds = (data.payload.tree || []).filter(k => !myTreeIds.includes(k.id)).map(k => k.id);
-                conn.send({ type: 'sync_diff', payload: { pushCanvas, pushTree, pullCanvasIds, pullTreeIds }});
-            }
-            else if (data.type === 'sync_diff' && dataTargetMode === 'contact') {
-                const { pushCanvas, pushTree, pullCanvasIds, pullTreeIds } = data.payload;
-                let hasMerged = false;
-                if (pushCanvas && pushCanvas.length > 0) { contextData.canvasNodes.push(...pushCanvas.map(n => ({...n, isMine: false}))); hasMerged = true; }
-                if (pushTree && pushTree.length > 0) { contextData.treeNodes.push(...pushTree.map(n => ({...n, isMine: false}))); hasMerged = true; }
-                const sendCanvas = (contextData.canvasNodes||[]).filter(n => pullCanvasIds.includes(n.id));
-                const sendTree = (contextData.treeNodes||[]).filter(n => pullTreeIds.includes(n.id));
-                if (sendCanvas.length > 0 || sendTree.length > 0) conn.send({ type: 'sync_push', payload: { pushCanvas: sendCanvas, pushTree: sendTree } });
-                if (hasMerged) handleSyncMerged(targetId);
-            }
-            else if (data.type === 'sync_push' && dataTargetMode === 'contact') {
-                const { pushCanvas, pushTree } = data.payload;
-                let hasMerged = false;
-                if (pushCanvas && pushCanvas.length > 0) { contextData.canvasNodes.push(...pushCanvas.map(n => ({...n, isMine: false}))); hasMerged = true; }
-                if (pushTree && pushTree.length > 0) { contextData.treeNodes.push(...pushTree.map(n => ({...n, isMine: false}))); hasMerged = true; }
-                if (hasMerged) handleSyncMerged(targetId);
-            }
-        });
-        
-        conn.on('close', () => { handleDisconnect(targetId); });
-        conn.on('error', () => { handleDisconnect(targetId); });
-    }
-
-    function broadcastToRoom(data, excludePeerId = null) {
-        if (activeChatMode !== 'room' || !isHost(activeChatId)) return;
-        Object.keys(activeRoomPeers).forEach(peerId => {
-            if (peerId !== excludePeerId) {
-                const conn = activeRoomPeers[peerId];
-                if (conn && conn.open) conn.send(data);
+                initiateSyncForPeer(peerId, targetId); // 既に繋がっていれば同期
             }
         });
     }
 
-    function broadcastRoomMembers() {
-        broadcastToRoom({ type: 'room_members_update', roomId: activeChatId, members: roomMembersInfo });
-    }
-
-    function initiateSync(targetId) {
-        if(activeChatMode !== 'contact') return;
-        const contact = appData.contacts[targetId];
+    // グループ対応の同期要求
+    function initiateSyncForPeer(peerId, contextId) {
+        const contact = appData.contacts[contextId];
         if (!contact) return;
-        const conn = activeConnections[targetId];
+        const conn = activeConnections[peerId];
         if(conn && conn.open) {
             const myCanvasKeys = (contact.canvasNodes || []).map(n => ({ id: n.id }));
             const myTreeKeys = (contact.treeNodes || []).map(n => ({ id: n.id }));
-            conn.send({ type: 'sync_check', payload: { canvas: myCanvasKeys, tree: myTreeKeys } });
+            conn.send({ type: 'sync_check', payload: { contextId, canvas: myCanvasKeys, tree: myTreeKeys } });
         }
     }
 
-    function handleSyncMerged(targetId) {
+    function handleSyncMerged(contextId) {
         saveData();
-        if(activeChatMode === 'contact' && activeChatId === targetId) {
-            renderWorkspace('canvas'); renderWorkspace('tree');
-            refreshCanvasSummaryAI();
-            if(activeTreeRootId) refreshTreeSummaryAI(activeTreeRootId);
+        // 重なり解消
+        if(activeContactId === contextId) {
+            renderWorkspace('canvas');
+            renderWorkspace('tree');
+            refreshCanvasSummaryAI(contextId);
+            if(activeTreeRootId) refreshTreeSummaryAI(contextId, activeTreeRootId);
         }
     }
 
-    function handleDisconnect(targetId) {
-        if(connectionStatus[targetId]) connectionStatus[targetId].isOnline = false;
-        if(activeRoomPeers[targetId]) {
-            delete activeRoomPeers[targetId];
-            delete roomMembersInfo[targetId];
-            broadcastRoomMembers();
-        }
+    function setupP2PConnection(peerId, conn, isInitiator) {
+        conn.on('open', () => {
+            activeConnections[peerId] = conn;
+            connectionStatus[peerId] = { lastPong: Date.now(), isOnline: true };
+            updateOnlineIndicator();
+            conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
+            
+            // 1on1なら同期、グループならグループコンテキストで同期
+            if (activeContactId && (!appData.contacts[activeContactId].isRoom || appData.contacts[activeContactId].members.includes(peerId))) {
+                initiateSyncForPeer(peerId, activeContactId);
+            }
+            updateTabUI();
+        });
+
+        conn.on('data', async (data) => {
+            if (data.type === 'ping') { conn.send({ type: 'pong' }); return; }
+            if (data.type === 'pong') {
+                if(connectionStatus[peerId]) {
+                    connectionStatus[peerId].lastPong = Date.now();
+                    if (!connectionStatus[peerId].isOnline) {
+                        connectionStatus[peerId].isOnline = true;
+                        updateOnlineIndicator();
+                        if(activeContactId) initiateSyncForPeer(peerId, activeContactId);
+                    }
+                }
+                return;
+            }
+            
+            if (data.type === 'system_info') {
+                // 個別コンタクトとしての情報も更新しておく
+                if(appData.contacts[peerId] && !appData.contacts[peerId].isRoom) {
+                    appData.contacts[peerId].name = data.payload.name;
+                    if(data.payload.icon) appData.contacts[peerId].icon = data.payload.icon;
+                    saveData();
+                }
+                // 送信者のアイコンキャッシュ
+                connectionStatus[peerId].name = data.payload.name;
+                connectionStatus[peerId].icon = data.payload.icon;
+                updateOnlineIndicator();
+                if(activeContactId === peerId) updateTabUI();
+            } else if (data.type === 'new_node' || data.type === 'update_node' || data.type === 'delete_node' || data.type === 'clear_canvas' || data.type === 'update_summary' || data.type === 'toggle_collapse') {
+                // Context ID (Room ID or Sender ID)
+                const targetContextId = data.payload.groupId || peerId;
+                
+                // 未知のグループなら作成
+                if (data.payload.groupId && !appData.contacts[data.payload.groupId]) {
+                    appData.contacts[data.payload.groupId] = { isRoom: true, name: "招待されたルーム", members: [peerId], canvasNodes: [], treeNodes: [] };
+                }
+
+                if (data.type === 'new_node') handleReceivedNode(targetContextId, data.payload, peerId);
+                else if (data.type === 'update_node') handleNodeUpdate(targetContextId, data.payload);
+                else if (data.type === 'delete_node') handleNodeDelete(targetContextId, data.payload.space, data.payload.id);
+                else if (data.type === 'clear_canvas') {
+                    if(appData.contacts[targetContextId]) appData.contacts[targetContextId].canvasNodes = [];
+                    saveData();
+                    if(activeContactId === targetContextId && currentTab === 'canvas') { renderWorkspace('canvas'); refreshCanvasSummaryAI(targetContextId); }
+                }
+                else if (data.type === 'update_summary') {
+                    const c = appData.contacts[targetContextId];
+                    if(c) {
+                        if (data.payload.space === 'canvas') {
+                            c.canvasSummary = data.payload.summary;
+                            if(activeContactId === targetContextId && currentTab === 'canvas') updateSummaryPanel(data.payload.summary, 'canvas');
+                        } else if (data.payload.space === 'tree') {
+                            const tNode = c.treeNodes.find(n => n.id === data.payload.rootId);
+                            if(tNode) tNode.treeSummary = data.payload.summary;
+                            if(activeContactId === targetContextId && currentTab === 'tree' && activeTreeRootId === data.payload.rootId) {
+                                updateSummaryPanel(data.payload.summary, 'tree');
+                            }
+                        }
+                        saveData();
+                    }
+                }
+            }
+            // 同期関連
+            else if (data.type === 'sync_check') {
+                const contextId = data.payload.contextId;
+                const contact = appData.contacts[contextId];
+                if (!contact) return;
+                
+                const theirCanvasIds = (data.payload.canvas || []).map(k => k.id);
+                const theirTreeIds = (data.payload.tree || []).map(k => k.id);
+                
+                const myCanvas = contact.canvasNodes || [];
+                const myTree = contact.treeNodes || [];
+                
+                const pushCanvas = myCanvas.filter(n => !theirCanvasIds.includes(n.id));
+                const pushTree = myTree.filter(n => !theirTreeIds.includes(n.id));
+                
+                const myCanvasIds = myCanvas.map(n => n.id);
+                const myTreeIds = myTree.map(n => n.id);
+                
+                const pullCanvasIds = (data.payload.canvas || []).filter(k => !myCanvasIds.includes(k.id)).map(k => k.id);
+                const pullTreeIds = (data.payload.tree || []).filter(k => !myTreeIds.includes(k.id)).map(k => k.id);
+                
+                conn.send({ type: 'sync_diff', payload: { contextId, pushCanvas, pushTree, pullCanvasIds, pullTreeIds }});
+            }
+            else if (data.type === 'sync_diff') {
+                const { contextId, pushCanvas, pushTree, pullCanvasIds, pullTreeIds } = data.payload;
+                const contact = appData.contacts[contextId];
+                if(!contact) return;
+                let hasMerged = false;
+                
+                if (pushCanvas && pushCanvas.length > 0) {
+                    pushCanvas.forEach(n => { n.isMine = false; n.senderId = peerId; });
+                    contact.canvasNodes.push(...pushCanvas);
+                    hasMerged = true;
+                }
+                if (pushTree && pushTree.length > 0) {
+                    pushTree.forEach(n => { n.isMine = false; n.senderId = peerId; });
+                    contact.treeNodes.push(...pushTree);
+                    hasMerged = true;
+                }
+                
+                const myCanvas = contact.canvasNodes || [];
+                const myTree = contact.treeNodes || [];
+                const sendCanvas = myCanvas.filter(n => pullCanvasIds.includes(n.id));
+                const sendTree = myTree.filter(n => pullTreeIds.includes(n.id));
+                
+                if (sendCanvas.length > 0 || sendTree.length > 0) {
+                    conn.send({ type: 'sync_push', payload: { contextId, pushCanvas: sendCanvas, pushTree: sendTree } });
+                }
+                if (hasMerged) handleSyncMerged(contextId);
+            }
+            else if (data.type === 'sync_push') {
+                const { contextId, pushCanvas, pushTree } = data.payload;
+                const contact = appData.contacts[contextId];
+                if(!contact) return;
+                let hasMerged = false;
+                if (pushCanvas && pushCanvas.length > 0) {
+                    pushCanvas.forEach(n => { n.isMine = false; n.senderId = peerId; });
+                    contact.canvasNodes.push(...pushCanvas);
+                    hasMerged = true;
+                }
+                if (pushTree && pushTree.length > 0) {
+                    pushTree.forEach(n => { n.isMine = false; n.senderId = peerId; });
+                    contact.treeNodes.push(...pushTree);
+                    hasMerged = true;
+                }
+                if (hasMerged) handleSyncMerged(contextId);
+            }
+        });
+        conn.on('close', () => { handleDisconnect(peerId); });
+        conn.on('error', () => { handleDisconnect(peerId); });
+    }
+
+    function handleDisconnect(peerId) {
+        if(connectionStatus[peerId]) connectionStatus[peerId].isOnline = false;
         updateOnlineIndicator();
     }
 
     function updateOnlineIndicator() {
-        if (!activeChatId) return;
-        let html = '';
-        if (activeChatMode === 'room') {
-            html = Object.keys(roomMembersInfo).map(pid => {
-                const info = roomMembersInfo[pid];
-                const isMe = pid === appData.myP2pId;
-                const role = isMe ? '(あなた)' : (pid === activeChatId.split('-')[1] ? '(ホスト)' : '');
-                return `<div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;"><img src="${info.icon||''}" style="width:16px;height:16px;border-radius:50%;background:#ccc;object-fit:cover;"> ${info.name} <span style="font-size:0.7rem; color:#888;">${role}</span></div>`;
-            }).join('');
-        } else {
-            const isOnline = connectionStatus[activeChatId] && connectionStatus[activeChatId].isOnline;
-            const contactName = appData.contacts[activeChatId]?.name || activeChatId;
-            html = `<div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;"><span style="color:${isOnline?'#4CAF50':'#9e9e9e'}; font-size:14px;">●</span> ${contactName}</div>`;
-        }
-        
-        const finalHtml = html || '<div style="opacity:0.6;">(誰もいません)</div>';
-        document.getElementById('online-list-canvas').innerHTML = finalHtml; 
-        document.getElementById('online-list-tree').innerHTML = finalHtml;
-        updateTabUI();
+        const listHtml = Object.keys(connectionStatus)
+            .filter(id => connectionStatus[id] && connectionStatus[id].isOnline)
+            .map(id => `<div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;"><span style="color:#4CAF50; font-size:14px;">●</span> ${connectionStatus[id].name || appData.contacts[id]?.name || id}</div>`).join('');
+        const finalHtml = listHtml || '<div style="opacity:0.6;">(誰もいません)</div>';
+        document.getElementById('online-list-canvas').innerHTML = finalHtml; document.getElementById('online-list-tree').innerHTML = finalHtml;
+        if(activeContactId) updateTabUI(); 
     }
 
-    // --- ワークスペース & UIイベント ---
+    function autoCropAndSaveIcon(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const size = 100; canvas.width = size; canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath(); ctx.arc(size/2, size/2, size/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
+                const minDim = Math.min(img.width, img.height);
+                const sx = (img.width - minDim) / 2; const sy = (img.height - minDim) / 2;
+                ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                
+                appData.userIcon = canvas.toDataURL('image/jpeg', 0.7); 
+                document.getElementById('profile-icon-preview').src = appData.userIcon;
+                saveData(); 
+                
+                Object.keys(activeConnections).forEach(id => {
+                    const conn = activeConnections[id];
+                    if(conn && conn.open) conn.send({ type: 'system_info', payload: { name: appData.userName, icon: appData.userIcon } });
+                });
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = ""; 
+    }
+
+    // --- ワークスペース ---
     function initWorkspaces() {
         ['canvas', 'tree'].forEach(space => {
             const cont = document.getElementById(`${space}-workspace`);
@@ -1055,13 +1016,11 @@
         viewStates[currentTab].panX = -4000 + (cont.offsetWidth / 2);
         viewStates[currentTab].panY = -4000 + (cont.offsetHeight / 2);
         updateWorkspaceTransform(currentTab);
-        updateMinimap(currentTab);
     }
 
     function updateWorkspaceTransform(space) {
         const layer = document.getElementById(`${space}-layer`);
         if(layer) layer.style.transform = `translate(${viewStates[space].panX}px, ${viewStates[space].panY}px)`;
-        updateMinimap(space); // Viewport枠の更新
     }
 
     function getCenterCoordinates(space) {
@@ -1070,6 +1029,7 @@
         return { x: (cont.offsetWidth / 2) - vs.panX, y: (cont.offsetHeight / 2) - vs.panY };
     }
 
+    // --- 新着ナビ & ミニマップ更新 ---
     function showNewMessageNav(x, y, space) {
         if(currentTab !== space) return;
         targetPanCoords = {x, y};
@@ -1086,121 +1046,125 @@
         vs.panY = (cont.offsetHeight / 2) - targetPanCoords.y;
         updateWorkspaceTransform(currentTab);
         document.getElementById('new-message-nav').style.display = 'none';
-        newMessages = []; // 既読
-        updateMinimap(currentTab);
     }
 
-    // ミニマップ用ロジック
-    function updateMinimap(space) {
-        if(currentTab !== space || !activeChatId) return;
-        const cvs = document.getElementById(`minimap-${space === 'canvas' ? 'canvas' : 'tree'}`);
-        if(!cvs) return;
-        
-        const cont = cvs.parentElement;
-        cvs.width = cont.offsetWidth;
-        cvs.height = cont.offsetHeight;
-        const ctx = cvs.getContext('2d');
+    // 透かしミニマップの描画ループ
+    function updateMinimap() {
+        if (currentTab === 'canvas' && activeContactId && appData.contacts[activeContactId]) {
+            const canvas = document.getElementById('canvas-minimap');
+            const ctx = canvas.getContext('2d');
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            
+            const nodes = appData.contacts[activeContactId].canvasNodes || [];
+            if (nodes.length > 0) {
+                // Bounds
+                let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+                nodes.forEach(n => {
+                    if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
+                    if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
+                });
+                // Margin
+                minX -= 200; minY -= 200; maxX += 400; maxY += 400;
+                
+                const w = maxX - minX; const h = maxY - minY;
+                const scaleX = canvas.width / w; const scaleY = canvas.height / h;
+                const scale = Math.min(scaleX, scaleY);
+                const ox = (canvas.width - w * scale) / 2;
+                const oy = (canvas.height - h * scale) / 2;
 
-        const nodes = getActiveData()?.[`${space}Nodes`] || [];
-        if(nodes.length === 0) return;
+                ctx.clearRect(0,0,canvas.width,canvas.height);
 
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach(n => {
-            const nx = n.x || 0; const ny = n.y || 0;
-            if(nx < minX) minX = nx; if(ny < minY) minY = ny;
-            if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
-        });
+                // Draw nodes
+                nodes.forEach(n => {
+                    const cx = ox + (n.x - minX) * scale;
+                    const cy = oy + (n.y - minY) * scale;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 3, 0, Math.PI*2);
+                    if (targetPanCoords && n.x === targetPanCoords.x && n.y === targetPanCoords.y) {
+                        ctx.fillStyle = '#ff9800'; // 新着はオレンジ
+                        ctx.arc(cx, cy, 6, 0, Math.PI*2);
+                    } else if (n.isMine) {
+                        ctx.fillStyle = '#007aff';
+                    } else {
+                        ctx.fillStyle = '#999';
+                    }
+                    ctx.fill();
+                });
 
-        const pad = 400;
-        minX -= pad; minY -= pad; maxX += pad; maxY += pad;
-        const mapW = maxX - minX; const mapH = maxY - minY;
-        const scale = Math.min(cvs.width / mapW, cvs.height / mapH);
-
-        const offsetX = (cvs.width - mapW * scale) / 2;
-        const offsetY = (cvs.height - mapH * scale) / 2;
-
-        ctx.clearRect(0,0,cvs.width,cvs.height);
-
-        // ノード点の描画
-        nodes.forEach(n => {
-            const x = offsetX + ((n.x||0) - minX) * scale;
-            const y = offsetY + ((n.y||0) - minY) * scale;
-            ctx.beginPath();
-            ctx.arc(x, y, newMessages.includes(n.id) ? 4 : 2.5, 0, Math.PI*2);
-            ctx.fillStyle = newMessages.includes(n.id) ? '#ff4081' : (n.isMine ? '#007aff' : '#888');
-            ctx.fill();
-        });
-
-        // 自分の視点（ビューポート）の描画
-        const wsCont = document.getElementById(`${space}-workspace`);
-        const vs = viewStates[space];
-        const viewX = offsetX + ((-vs.panX) - minX) * scale;
-        const viewY = offsetY + ((-vs.panY) - minY) * scale;
-        const viewW = wsCont.offsetWidth * scale;
-        const viewH = wsCont.offsetHeight * scale;
-
-        ctx.strokeStyle = '#4CAF50';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(viewX, viewY, viewW, viewH);
-    }
-
-    function handleMinimapClick(e, space) {
-        e.stopPropagation();
-        const cvs = e.target;
-        const rect = cvs.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-
-        const nodes = getActiveData()?.[`${space}Nodes`] || [];
-        if(nodes.length === 0) return;
-
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach(n => {
-            const nx = n.x || 0; const ny = n.y || 0;
-            if(nx < minX) minX = nx; if(ny < minY) minY = ny;
-            if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
-        });
-        const pad = 400;
-        minX -= pad; minY -= pad; maxX += pad; maxY += pad;
-        const mapW = maxX - minX; const mapH = maxY - minY;
-        const scale = Math.min(cvs.width / mapW, cvs.height / mapH);
-        const offsetX = (cvs.width - mapW * scale) / 2;
-        const offsetY = (cvs.height - mapH * scale) / 2;
-
-        // 逆算してキャンバス座標を取得
-        const targetCanvasX = (clickX - offsetX) / scale + minX;
-        const targetCanvasY = (clickY - offsetY) / scale + minY;
-
-        const cont = document.getElementById(`${space}-workspace`);
-        const vs = viewStates[space];
-        vs.panX = (cont.offsetWidth / 2) - targetCanvasX;
-        vs.panY = (cont.offsetHeight / 2) - targetCanvasY;
-        
-        updateWorkspaceTransform(space);
-        newMessages = []; // 移動で既読化
+                // Draw viewport rect
+                const cont = document.getElementById('canvas-workspace');
+                const vs = viewStates['canvas'];
+                const vpX = ox + (-vs.panX - minX) * scale;
+                const vpY = oy + (-vs.panY - minY) * scale;
+                const vpW = cont.offsetWidth * scale;
+                const vpH = cont.offsetHeight * scale;
+                
+                ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(vpX, vpY, vpW, vpH);
+                ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
+                ctx.fillRect(vpX, vpY, vpW, vpH);
+            }
+        }
+        minimapAnimationId = requestAnimationFrame(updateMinimap);
     }
 
     // --- 操作ロジック ---
-    function sendNetworkMessage(type, space, payload) {
-        if (!activeChatId) return;
-        const data = { type, roomId: activeChatMode === 'room' ? activeChatId : null, payload };
-        if (activeChatMode === 'room') {
-            if (isHost(activeChatId)) broadcastToRoom(data);
-            else {
-                const hostId = activeChatId.split('-')[1];
-                if(activeConnections[hostId] && activeConnections[hostId].open) activeConnections[hostId].send(data);
-            }
-        } else {
-            if(activeConnections[activeChatId] && activeConnections[activeChatId].open) activeConnections[activeChatId].send(data);
+    function toggleMoveMode(e, id, space) {
+        if(space !== 'canvas') return; 
+        e.stopPropagation();
+        document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
+        const el = document.getElementById(`node-${space}-${id}`);
+        if(el) el.classList.add('move-mode');
+    }
+
+    function toggleNodeExpand(e, id, space) {
+        e.stopPropagation();
+        if(!activeContactId) return;
+        const node = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
+        if(node) {
+            node.isExpanded = !node.isExpanded;
+            saveData();
+            renderWorkspace(space);
         }
     }
 
-    let activeNodeDrag = null;
+    function startLinkMode(e, id) {
+        e.stopPropagation();
+        linkingSourceId = id;
+        document.getElementById('linking-indicator').style.display = 'block';
+    }
+    function cancelLinkMode() {
+        linkingSourceId = null;
+        document.getElementById('linking-indicator').style.display = 'none';
+    }
+
+    function handleCanvasNodeBodyClick(e, id, name) {
+        if (linkingSourceId) {
+            if (linkingSourceId !== id) {
+                const cNode = appData.contacts[activeContactId].canvasNodes.find(n => n.id === linkingSourceId);
+                const tNode = appData.contacts[activeContactId].treeNodes.find(n => n.id === linkingSourceId);
+                if(cNode) cNode.parentId = id;
+                if(tNode) tNode.parentId = id;
+                saveData();
+                renderWorkspace('canvas');
+                
+                broadcastToRoom(activeContactId, { type: 'update_node', payload: { space: 'canvas', node: cNode, groupId: activeContactId } });
+                broadcastToRoom(activeContactId, { type: 'update_node', payload: { space: 'tree', node: tNode, groupId: activeContactId } });
+                refreshCanvasSummaryAI(activeContactId);
+            }
+            cancelLinkMode();
+        } else {
+            setReplyTarget(id, name, 'canvas');
+        }
+    }
+
     function startNodeDrag(e, id, space) {
         e.stopPropagation();
-        const d = getActiveData();
-        if(!d) return;
-        const nodeObj = d[`${space}Nodes`].find(n => n.id === id);
+        if(!activeContactId || !appData.contacts[activeContactId]) return;
+        const nodeObj = appData.contacts[activeContactId][`${space}Nodes`].find(n => n.id === id);
         if(!nodeObj || !nodeObj.isMine) return; 
         activeNodeDrag = { id, space, nodeObj, startX: e.clientX, startY: e.clientY, initX: nodeObj.x || 0, initY: nodeObj.y || 0 };
     }
@@ -1216,18 +1180,16 @@
             if(el) { el.style.left = `${activeNodeDrag.nodeObj.x}px`; el.style.top = `${activeNodeDrag.nodeObj.y}px`; }
             
             if(space === 'canvas') drawCanvasLines();
-            if(space === 'tree') drawTreeLines();
         }
     }
 
     function handleNodePointerUp(e, space) {
         if (activeNodeDrag) {
             saveData();
-            sendNetworkMessage('update_node', space, { space, node: activeNodeDrag.nodeObj });
+            broadcastToRoom(activeContactId, { type: 'update_node', payload: { space, node: activeNodeDrag.nodeObj, groupId: activeContactId } });
             const el = document.getElementById(`node-${space}-${activeNodeDrag.id}`);
             if(el) el.classList.remove('move-mode');
             activeNodeDrag = null;
-            updateMinimap(space);
         }
     }
 
@@ -1250,213 +1212,284 @@
         if(!space || space === 'tree') document.getElementById('tree-reply-indicator').style.display = 'none'; 
     }
 
-    function toggleMoveMode(e, id, space) {
-        if(space !== 'canvas') return; 
-        e.stopPropagation();
-        document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
-        const el = document.getElementById(`node-${space}-${id}`);
-        if(el) el.classList.add('move-mode');
-    }
-
-    function toggleNodeExpand(e, id, space) {
-        e.stopPropagation();
-        const d = getActiveData();
-        if(!d) return;
-        const node = d[`${space}Nodes`].find(n => n.id === id);
-        if(node) { node.isExpanded = !node.isExpanded; saveData(); renderWorkspace(space); }
-    }
-
-    function toggleTreeExpand(e, id) {
-        e.stopPropagation();
-        const el = document.getElementById(`node-tree-${id}`);
-        if(el) {
-            const isExpanded = el.classList.contains('expanded');
-            document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('expanded'));
-            if(!isExpanded) el.classList.add('expanded');
-        }
-    }
-
     function clearCanvas() {
-        if(!activeChatId) return;
+        if(!activeContactId) return;
         if(confirm("キャンバスの文字を全て消去しますか？\n（※ツリーには残ります）")) {
-            const d = getActiveData();
-            d.canvasNodes = []; saveData();
-            renderWorkspace('canvas'); refreshCanvasSummaryAI();
-            sendNetworkMessage('clear_canvas', 'canvas', {});
+            appData.contacts[activeContactId].canvasNodes = [];
+            saveData();
+            renderWorkspace('canvas');
+            refreshCanvasSummaryAI(activeContactId);
+            broadcastToRoom(activeContactId, { type: 'clear_canvas', payload: { groupId: activeContactId } });
         }
     }
-    
-    // 画像保存処理
-    async function exportCanvasImage() {
-        if(!activeChatId) return;
-        const layer = document.getElementById('canvas-layer');
-        const d = getActiveData();
-        if(!d || !d.canvasNodes || d.canvasNodes.length === 0) return alert('保存する発言がありません');
 
-        const btn = document.getElementById('btn-export-canvas');
-        const origText = btn.innerText;
-        btn.innerText = "処理中...";
-
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        d.canvasNodes.forEach(n => {
-            if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
-            if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
-        });
+    // --- ツリー切り替え管理 ---
+    function openTreeManageModal() {
+        if(!activeContactId) return;
+        const list = document.getElementById('tree-manage-list');
+        list.innerHTML = '';
+        const nodes = appData.contacts[activeContactId].treeNodes || [];
+        const roots = nodes.filter(n => !n.parentId);
         
-        // パディングと表示エリア設定
-        const pad = 100; minX -= pad; minY -= pad; maxX += pad + 300; maxY += pad + 200;
-        const w = maxX - minX; const h = maxY - minY;
+        if(roots.length === 0) { 
+            list.innerHTML = '<p style="text-align:center; color:#888;">ツリーがありません</p>'; 
+        } else {
+            roots.sort((a,b)=>b.timestamp - a.timestamp).forEach(n => {
+                const name = n.isMine ? appData.userName : (appData.contacts[activeContactId].name || '相手');
+                const text = (n.text || '画像など').substring(0, 30) + '...';
+                const isCurrent = (activeTreeRootId === n.id);
+                list.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:${isCurrent ? 'rgba(0,122,255,0.1)' : '#f9f9f9'}; border-radius:8px; margin-bottom:8px; border:1px solid ${isCurrent ? 'rgba(0,122,255,0.3)' : '#eee'}; cursor:pointer;" onclick="switchTreeRoot('${n.id}')">
+                        <div>
+                            <div style="font-size:0.7rem; color:#888;">${name} (${formatTime(n.timestamp)})</div>
+                            <div style="font-size:0.9rem; font-weight:bold; color:#333;">${text}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        document.getElementById('tree-manage-modal').style.display = 'flex';
+    }
 
-        const origTransform = layer.style.transform;
-        layer.style.transform = `translate(${-minX}px, ${-minY}px)`;
+    function switchTreeRoot(id) {
+        activeTreeRootId = id;
+        document.getElementById('tree-manage-modal').style.display = 'none';
+        
+        const rootNode = appData.contacts[activeContactId].treeNodes.find(n => n.id === id);
+        if (rootNode) {
+            const cont = document.getElementById('tree-workspace');
+            const vs = viewStates['tree'];
+            vs.panX = (cont.offsetWidth / 2) - 100; 
+            vs.panY = (cont.offsetHeight / 2) - 50;
+        }
+        renderWorkspace('tree');
 
-        try {
-            const canvas = await html2canvas(layer, { width: w, height: h, backgroundColor: document.body.style.backgroundColor || '#f0f4f8' });
-            const link = document.createElement('a');
-            link.download = `NC_Chat_Export_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        } catch(e) {
-            console.error(e);
-            alert("画像の保存に失敗しました");
-        } finally {
-            layer.style.transform = origTransform;
-            btn.innerText = origText;
+        if (rootNode && !rootNode.treeSummary) {
+            refreshTreeSummaryAI(activeContactId, id);
         }
     }
 
-    // --- メイン送信処理 ---
+    function getNonOverlappingCanvasPos(parentId, contactNodes) {
+        const parent = contactNodes.find(n => n.id === parentId);
+        if(!parent) return {x: 0, y: 0};
+        
+        let radius = 220;
+        let angle = Math.random() * Math.PI * 2;
+        let px = parent.x + Math.cos(angle) * radius;
+        let py = parent.y + Math.sin(angle) * radius;
+        
+        for(let i=0; i<15; i++) {
+            let collision = false;
+            for(let n of contactNodes) {
+                if(n.id !== parentId && Math.hypot((n.x||0) - px, (n.y||0) - py) < 160) {
+                    collision = true; break;
+                }
+            }
+            if(!collision) break;
+            angle += Math.PI / 4;
+            radius += 10;
+            px = parent.x + Math.cos(angle) * radius;
+            py = parent.y + Math.sin(angle) * radius;
+        }
+        return {x: px, y: py};
+    }
+
+    // --- メイン送信処理 (グループ対応) ---
+    function broadcastToRoom(targetContextId, messageObj) {
+        const contact = appData.contacts[targetContextId];
+        if(!contact) return;
+        
+        if (contact.isRoom) {
+            contact.members.forEach(memberId => {
+                const conn = activeConnections[memberId];
+                if(conn && conn.open) conn.send(messageObj);
+            });
+        } else {
+            const conn = activeConnections[targetContextId];
+            if(conn && conn.open) conn.send(messageObj);
+        }
+    }
+
     async function sendMessage(sourceSpace) {
         try {
+            if (!appData.userIcon) {
+                alert("プロフィール写真を設定してください。");
+                switchTab('tab-settings', document.getElementById('tab-btn-settings'));
+                return;
+            }
+
             const inputEl = sourceSpace === 'canvas' ? document.getElementById('chat-input-text') : document.getElementById('tree-input-text');
             if (!inputEl) return;
             const text = inputEl.value.trim();
             const file = currentAttachedFile;
 
             if (!text && !file) return;
-            if (!activeChatId) return alert('ルームや個別チャットを開いてください');
+            if (!activeContactId) return alert('ルーム・相手を開いてください');
             
-            const contextData = getActiveData();
+            const contact = appData.contacts[activeContactId];
+            if (!contact.canvasNodes) contact.canvasNodes = [];
+            if (!contact.treeNodes) contact.treeNodes = [];
+
             const id = Date.now().toString();
             const passedReplyId = replyTargetId;
 
             let cx = 0, cy = 0;
             if (sourceSpace === 'canvas') {
                 if (passedReplyId) {
-                    const parent = contextData.canvasNodes.find(n => n.id === passedReplyId);
-                    cx = (parent ? parent.x : 0) + (Math.random() * 200 - 50); 
-                    cy = (parent ? parent.y : 0) + 120 + (Math.random() * 50);
+                    const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
+                    cx = pos.x; cy = pos.y;
                 } else {
                     const centerC = getCenterCoordinates('canvas');
                     cx = centerC.x + (Math.random() - 0.5) * 150; cy = centerC.y + (Math.random() - 0.5) * 150;
                 }
             }
 
-            const senderId = appData.myP2pId;
-            const canvasNode = { id, text, file, aiData: null, isMine: true, senderId, x: cx, y: cy, parentId: passedReplyId, timestamp: Date.now(), isExpanded: false };
-            const treeNode = { id, text, file, aiData: null, isMine: true, senderId, x: 0, y: 0, parentId: passedReplyId, timestamp: Date.now(), isCollapsed: false };
+            const canvasNode = { id, text, file, aiData: null, isMine: true, senderId: appData.myP2pId, x: cx, y: cy, parentId: passedReplyId, timestamp: Date.now(), isExpanded: false };
+            const treeNode = { id, text, file, aiData: null, isMine: true, senderId: appData.myP2pId, x: 0, y: 0, parentId: passedReplyId, timestamp: Date.now(), isCollapsed: false };
 
-            contextData.canvasNodes.push(canvasNode);
-            contextData.treeNodes.push(treeNode);
+            contact.canvasNodes.push(canvasNode);
+            contact.treeNodes.push(treeNode);
             
             inputEl.value = ''; 
             cancelReply(sourceSpace);
             if (file) removeAttachedFile();
             
-            if (!passedReplyId && (!activeTreeRootId || !contextData.treeNodes.find(n=>n.id===activeTreeRootId))) {
+            if (!passedReplyId && (!activeTreeRootId || !contact.treeNodes.find(n=>n.id===activeTreeRootId))) {
                 activeTreeRootId = treeNode.id;
             }
             
             saveData();
             
             renderWorkspace('canvas');
-            renderWorkspace('tree');
+            if (!passedReplyId || getTreeFamily(activeTreeRootId, contact.treeNodes).find(n => n.id === passedReplyId)) {
+                renderWorkspace('tree');
+            }
             
-            sendNetworkMessage('new_node', 'canvas', { space: 'canvas', node: canvasNode });
-            sendNetworkMessage('new_node', 'tree', { space: 'tree', node: treeNode });
+            // ブロードキャスト
+            broadcastToRoom(activeContactId, { type: 'new_node', payload: { space: 'canvas', node: canvasNode, groupId: contact.isRoom ? activeContactId : undefined } });
+            broadcastToRoom(activeContactId, { type: 'new_node', payload: { space: 'tree', node: treeNode, groupId: contact.isRoom ? activeContactId : undefined } });
 
-            processEmotionAndTreeAI(text, id, passedReplyId);
+            // AI解析
+            processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
             
-        } catch (error) { console.error("送信エラー:", error); alert("送信エラー\n" + error.message); }
+        } catch (error) {
+            console.error("送信エラー:", error);
+            alert("送信エラー: " + error.message);
+        }
     }
 
-    // --- DOM描画とツリー改善 ---
-    function getSenderName(senderId) {
-        if (!senderId || senderId === appData.myP2pId) return appData.userName;
-        if (activeChatMode === 'room' && roomMembersInfo[senderId]) return roomMembersInfo[senderId].name;
-        if (activeChatMode === 'contact' && appData.contacts[activeChatId]) return appData.contacts[activeChatId].name;
-        return "参加者";
+    // --- DOM描画 ---
+    function getTreeFamily(rootId, allNodes) {
+        if(!rootId) return [];
+        const family = [];
+        const queue = [rootId];
+        while(queue.length > 0) {
+            const curr = queue.shift();
+            const node = allNodes.find(n => n.id === curr);
+            if (node) {
+                family.push(node);
+                const children = allNodes.filter(n => n.parentId === curr).map(n => n.id);
+                queue.push(...children);
+            }
+        }
+        return family;
     }
 
-    function getSenderIcon(senderId) {
-        if (!senderId || senderId === appData.myP2pId) return appData.userIcon;
-        if (activeChatMode === 'room' && roomMembersInfo[senderId]) return roomMembersInfo[senderId].icon;
-        if (activeChatMode === 'contact' && appData.contacts[activeChatId]) return appData.contacts[activeChatId].icon;
-        return "";
+    function getTreeRootId(nodeId, allNodes) {
+        let curr = allNodes.find(n => n.id === nodeId);
+        while(curr && curr.parentId) {
+            const parent = allNodes.find(n => n.id === curr.parentId);
+            if(!parent) break;
+            curr = parent;
+        }
+        return curr ? curr.id : null;
     }
 
     function renderWorkspace(space) {
-        const container = document.getElementById(space === 'tree' ? 'tree-nodes-container' : 'canvas-nodes-container');
+        const containerId = space === 'tree' ? 'tree-nodes-container' : 'canvas-nodes-container';
+        const container = document.getElementById(containerId);
         if(!container) return;
+        
         container.innerHTML = '';
         
-        const d = getActiveData();
-        if(!d) {
+        if(!activeContactId || !appData.contacts[activeContactId]) {
             const svg = document.getElementById(`${space}-svg-layer`);
             if(svg) { while (svg.firstChild) { svg.removeChild(svg.firstChild); } }
             return;
         }
         
         if (space === 'tree') {
-            const allNodes = d.treeNodes || [];
+            const allNodes = appData.contacts[activeContactId].treeNodes || [];
             if(allNodes.length > 0 && (!activeTreeRootId || !allNodes.find(n=>n.id===activeTreeRootId))) {
                 const roots = allNodes.filter(n => !n.parentId).sort((a,b)=>a.timestamp - a.timestamp);
-                activeTreeRootId = roots.length > 0 ? roots[0].id : allNodes[allNodes.length-1].id;
+                if(roots.length > 0) activeTreeRootId = roots[0].id;
+                else activeTreeRootId = allNodes[allNodes.length-1].id;
             }
             
-            // ツリー配置計算（無駄な間隔を省く、Y軸を詰めるロジック）
+            const layout = {};
             let currentY = 0;
-            function calcLayout(nodeId, depth, xOffset) {
+            const startX = 0;
+            
+            // ツリーの縦並び配置計算（見やすさ改善）
+            function calcLayout(nodeId, depth) {
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
-                node.x = xOffset; node.y = currentY;
-                
-                // 次の要素用のY幅を概算
-                let yStep = 60;
-                if(node.file && node.file.isImage) yStep += 100;
-                if(node.text && node.text.length > 30) yStep += 20;
-                currentY += yStep;
-                
-                const children = allNodes.filter(n => n.parentId === nodeId).sort((a,b)=>a.timestamp-b.timestamp);
-                children.forEach(c => calcLayout(c.id, depth + 1, xOffset + 40));
-            }
-            
-            if(activeTreeRootId) calcLayout(activeTreeRootId, 0, 50);
+                layout[node.id] = { x: startX + (depth * 30), y: currentY };
+                currentY += 50; 
+                if (node.file) currentY += 90;
+                if (node.text && node.text.length > 20) currentY += 20;
 
-            allNodes.forEach(n => {
-                if(n.y !== undefined) appendNodeToDOM(n, space, allNodes);
+                const children = allNodes.filter(n => n.parentId === nodeId).sort((a,b)=>a.timestamp-b.timestamp);
+                children.forEach(c => calcLayout(c.id, depth + 1));
+            }
+            if(activeTreeRootId) calcLayout(activeTreeRootId, 0);
+
+            const family = getTreeFamily(activeTreeRootId, allNodes);
+            family.forEach(n => {
+                if(layout[n.id]) { n.tempX = layout[n.id].x; n.tempY = layout[n.id].y; }
+                appendNodeToDOM(n, space);
             });
-            drawTreeLines();
+            drawTreeLines(family);
             
             const rootNode = allNodes.find(n => n.id === activeTreeRootId);
-            updateSummaryPanel(rootNode ? rootNode.treeSummary : "", 'tree');
+            if (rootNode && rootNode.treeSummary) updateSummaryPanel(rootNode.treeSummary, 'tree');
+            else updateSummaryPanel("", 'tree');
             
         } else {
-            const nodes = d.canvasNodes || [];
+            const nodes = appData.contacts[activeContactId].canvasNodes || [];
             nodes.forEach(n => appendNodeToDOM(n, space));
             drawCanvasLines();
-            updateSummaryPanel(d.canvasSummary, 'canvas');
+            
+            if(appData.contacts[activeContactId].canvasSummary) updateSummaryPanel(appData.contacts[activeContactId].canvasSummary, 'canvas');
         }
         
         updateWorkspaceTransform(space);
     }
 
-    function appendNodeToDOM(node, space, allNodes = []) {
-        const targetLayer = document.getElementById(space === 'tree' ? 'tree-nodes-container' : 'canvas-nodes-container');
+    function appendNodeToDOM(node, space) {
+        const containerId = space === 'tree' ? 'tree-nodes-container' : 'canvas-nodes-container';
+        const targetLayer = document.getElementById(containerId);
         if(!targetLayer) return;
 
         const el = document.createElement('div');
-        const senderName = getSenderName(node.senderId);
+        
+        let senderName = "不明", senderIcon = "";
+        if (node.isMine) {
+            senderName = appData.userName; senderIcon = appData.userIcon;
+        } else {
+            // グループチャットの場合は送信者のIDから情報を引く
+            if (node.senderId && connectionStatus[node.senderId]) {
+                senderName = connectionStatus[node.senderId].name || node.senderId;
+                senderIcon = connectionStatus[node.senderId].icon || '';
+            } else if (node.senderId && appData.contacts[node.senderId]) {
+                senderName = appData.contacts[node.senderId].name || node.senderId;
+                senderIcon = appData.contacts[node.senderId].icon || '';
+            } else {
+                senderName = appData.contacts[activeContactId].name || '相手';
+                senderIcon = appData.contacts[activeContactId].icon || '';
+            }
+        }
+
         const ai = node.aiData || {};
         const font = ai.fontFamily || 'inherit';
         const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
@@ -1468,31 +1501,22 @@
         if (space === 'tree') {
             el.className = `tree-node ${node.isMine ? 'mine' : 'theirs'}`;
             el.id = `node-tree-${node.id}`;
-            el.style.left = `${node.x || 0}px`; el.style.top = `${node.y || 0}px`;
+            const safeX = node.tempX !== undefined ? node.tempX : 0; 
+            const safeY = node.tempY !== undefined ? node.tempY : 0;
+            el.style.left = `${safeX}px`; el.style.top = `${safeY}px`;
             
-            const isLong = displayText.length >= 30;
-            const collapsedText = isLong ? displayText.substring(0, 30) + '...' : displayText;
+            const isLong = displayText.length >= 25;
+            
             const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
-            let replyHtml = '';
-            if (node.parentId) {
-                const parentNode = allNodes.find(n => n.id === node.parentId);
-                if (parentNode) {
-                    const pName = getSenderName(parentNode.senderId);
-                    replyHtml = `<div class="tree-node-reply-label">↳ ${pName} へ返信</div>`;
-                }
-            }
-
             let contentHtml = `
-                ${replyHtml}
-                <div class="tree-node-name">${senderName} <span class="node-time" style="margin-left: 6px;">${timeStr}</span></div>
-                <div class="tree-node-content ${isLong ? 'expandable' : ''}" onclick="toggleTreeExpand(event, '${node.id}')">
-                    <div class="tree-node-text text-collapsed" style="font-family:'${font}', sans-serif; color:${color};">${collapsedText}</div>
-                    ${isLong ? `<div class="tree-node-text text-full" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>` : ''}
+                <div class="tree-node-name">${senderName} <span style="margin-left:6px; font-weight:normal;">${timeStr}</span></div>
+                <div class="tree-node-content">
+                    <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>
             `;
             if (node.file) {
-                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; border-radius:6px; margin-top:4px;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
-                else contentHtml += `<br><a href="${node.file.dataBase64}" download="${node.file.name}" style="font-size:0.8rem;">📎 ${node.file.name}</a>`;
+                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; border-radius:6px; margin-top:4px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
+                else contentHtml += `<br><a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; font-size:0.8rem; background:rgba(0,0,0,0.05); padding:4px; border-radius:4px; text-decoration:none;">📎 ${node.file.name}</a>`;
             }
             contentHtml += `</div><div class="tree-controls">${replyBtn}</div>`;
             el.innerHTML = contentHtml;
@@ -1500,22 +1524,27 @@
         } else {
             el.className = `chat-node ${node.isMine ? 'mine' : 'theirs'}`;
             if (!node.parentId) el.classList.add('root-node'); 
-            el.id = `node-canvas-${node.id}`;
-            el.style.left = `${node.x || 0}px`; el.style.top = `${node.y || 0}px`;
             
-            const senderIcon = getSenderIcon(node.senderId);
+            el.id = `node-canvas-${node.id}`;
+            const safeX = node.x || 0; const safeY = node.y || 0;
+            el.style.left = `${safeX}px`; el.style.top = `${safeY}px`;
+            
             const isExpanded = node.isExpanded ? true : false;
             
-            let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div>` : ``;
+            // 四隅のコントロール
+            let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div><div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div><div class="action-handle link-handle" onclick="startLinkMode(event, '${node.id}')">🔗</div>` : `<div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div>`;
+
             let expandBtn = `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>`;
 
             let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName} <span class="node-time">${timeStr}</span></div>`;
             
-            contentHtml += `<div class="node-body" onclick="setReplyTarget('${node.id}', '${senderName}', 'canvas')">`;
-            if(displayText) contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+            contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
+            if(displayText) {
+                contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color};">${displayText}</div>`;
+            }
             if (node.file) {
-                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-width:100%; border-radius:8px; margin-top:8px;">`;
-                else contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="display:inline-block; margin-top:8px; padding:6px; background:rgba(0,0,0,0.05); font-size:0.8rem;">📎 ${node.file.name}</a>`;
+                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-width:100%; border-radius:8px; margin-top:8px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
+                else contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; display:inline-block; margin-top:8px; padding:6px; background:rgba(0,0,0,0.05); border-radius:6px; text-decoration:none; font-size:0.8rem;">📎 ${node.file.name}</a>`;
             }
             contentHtml += `</div>`;
             
@@ -1524,9 +1553,76 @@
         targetLayer.appendChild(el);
     }
 
-    // キャンバス用結線
+    function handleReceivedNode(targetContextId, payload, senderId) {
+        const { space, node } = payload;
+        const contact = appData.contacts[targetContextId];
+        node.isMine = false;
+        node.senderId = senderId;
+        contact[`${space}Nodes`].push(node);
+        saveData();
+        
+        if (activeContactId === targetContextId) {
+            renderWorkspace(currentTab);
+            if (currentTab === space) {
+                const vs = viewStates[space];
+                const cont = document.getElementById(`${space}-workspace`);
+                const screenX = ((node.tempX !== undefined ? node.tempX : node.x) * vs.scale) + vs.panX;
+                const screenY = ((node.tempY !== undefined ? node.tempY : node.y) * vs.scale) + vs.panY;
+                if (screenX < 0 || screenX > cont.offsetWidth || screenY < 0 || screenY > cont.offsetHeight) {
+                    showNewMessageNav(node.tempX !== undefined ? node.tempX : node.x, node.tempY !== undefined ? node.tempY : node.y, space);
+                }
+            }
+        }
+    }
+
+    function handleNodeUpdate(targetContextId, payload) {
+        const { space, node } = payload;
+        const contact = appData.contacts[targetContextId];
+        const idx = contact[`${space}Nodes`].findIndex(n => n.id === node.id);
+        if(idx !== -1) {
+            node.isMine = contact[`${space}Nodes`][idx].isMine; 
+            contact[`${space}Nodes`][idx] = node;
+            saveData();
+            if(activeContactId === targetContextId && currentTab === space) renderWorkspace(space);
+        }
+    }
+
+    function deleteNodeUI(id, space, e) {
+        e.stopPropagation();
+        if(!confirm(`キャンバスから削除しますか？\n(ツリーには残ります)`)) return;
+        handleNodeDelete(activeContactId, space, id);
+        broadcastToRoom(activeContactId, { type: 'delete_node', payload: { space, id, groupId: activeContactId } });
+    }
+
+    function handleNodeDelete(targetContextId, space, id) {
+        const contact = appData.contacts[targetContextId];
+        if(!contact) return;
+        contact[`${space}Nodes`] = contact[`${space}Nodes`].filter(n => n.id !== id);
+        contact[`${space}Nodes`].forEach(n => { if(n.parentId === id) n.parentId = null; });
+        saveData();
+        
+        if(activeContactId === targetContextId) {
+            if(space === 'canvas') refreshCanvasSummaryAI(targetContextId);
+            renderWorkspace(currentTab);
+        }
+    }
+
+    // --- キャンバスの線 ---
+    function getEdgeOffset(w, h, dx, dy) {
+        if (dx === 0 && dy === 0) return {x:0, y:0};
+        const angle = Math.atan2(dy, dx);
+        const absCos = Math.abs(Math.cos(angle));
+        const absSin = Math.abs(Math.sin(angle));
+        let x = w/2, y = h/2;
+        if (w/2 * absSin <= h/2 * absCos) { x = w/2; y = w/2 * Math.tan(angle); } 
+        else { y = h/2; x = h/2 / Math.tan(angle); }
+        x = dx > 0 ? Math.abs(x) : -Math.abs(x); y = dy > 0 ? Math.abs(y) : -Math.abs(y);
+        const margin = 14; const len = Math.hypot(x, y);
+        x += (x/len) * margin; y += (y/len) * margin; return {x, y};
+    }
+
     function drawCanvasLines() {
-        if(currentTab !== 'canvas' || !activeChatId) return;
+        if(currentTab !== 'canvas' || !activeContactId) return;
         const svg = document.getElementById('canvas-svg-layer');
         if(!svg) return;
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -1535,7 +1631,7 @@
         defs.innerHTML = `<marker id="dot-canvas" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"><circle cx="5" cy="5" r="4" fill="rgba(0, 122, 255, 0.8)" /></marker>`;
         svg.appendChild(defs);
         
-        const nodes = getActiveData()?.canvasNodes || [];
+        const nodes = appData.contacts[activeContactId].canvasNodes || [];
         nodes.forEach(n => {
             if(n.parentId) {
                 const parent = nodes.find(p => p.id === n.parentId);
@@ -1544,52 +1640,46 @@
                     const cEl = document.getElementById(`node-canvas-${n.id}`);
                     const pW = pEl ? pEl.offsetWidth : 160; const pH = pEl ? pEl.offsetHeight : 80;
                     const cW = cEl ? cEl.offsetWidth : 160; const cH = cEl ? cEl.offsetHeight : 80;
-
                     const px = (parent.x || 0) + pW/2; const py = (parent.y || 0) + pH/2;
                     const cx = (n.x || 0) + cW/2; const cy = (n.y || 0) + cH/2;
                     
-                    if (Math.hypot(cx - px, cy - py) < 40) return; 
+                    const dx = cx - px; const dy = cy - py;
+                    if (Math.hypot(dx, dy) < 40) return; 
 
+                    const pOffset = getEdgeOffset(pW, pH, dx, dy);
+                    const cOffset = getEdgeOffset(cW, cH, -dx, -dy); 
+                    const startX = px + pOffset.x; const startY = py + pOffset.y;
+                    const endX = cx + cOffset.x; const endY = cy + cOffset.y;
+                    
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', `M ${px},${py} C ${(px+cx)/2},${py} ${(px+cx)/2},${cy} ${cx},${cy}`); 
-                    path.setAttribute('stroke', 'rgba(0, 122, 255, 0.5)');
-                    path.setAttribute('stroke-width', '3');
-                    path.setAttribute('stroke-dasharray', '6,6'); 
-                    path.setAttribute('fill', 'none');
-                    path.setAttribute('marker-end', 'url(#dot-canvas)'); 
+                    path.setAttribute('d', `M ${startX},${startY} C ${(startX+endX)/2},${startY} ${(startX+endX)/2},${endY} ${endX},${endY}`);
+                    path.setAttribute('stroke', 'rgba(0, 122, 255, 0.5)'); path.setAttribute('stroke-width', '3');
+                    path.setAttribute('stroke-dasharray', '6,6'); path.setAttribute('fill', 'none'); path.setAttribute('marker-end', 'url(#dot-canvas)'); 
                     svg.appendChild(path);
                 }
             }
         });
     }
 
-    // ツリー用結線 (L字型)
-    function drawTreeLines() {
-        if(currentTab !== 'tree' || !activeChatId) return;
+    // --- ツリーの線 ---
+    function drawTreeLines(familyNodes) {
         const svg = document.getElementById('tree-svg-layer');
         if(!svg) return;
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
-
-        const nodes = getActiveData()?.treeNodes || [];
-        nodes.forEach(n => {
-            if(n.parentId && n.x !== undefined) {
-                const parent = nodes.find(p => p.id === n.parentId);
-                if(parent && parent.x !== undefined) {
-                    const pEl = document.getElementById(`node-tree-${parent.id}`);
-                    const cEl = document.getElementById(`node-tree-${n.id}`);
-                    const pH = pEl ? pEl.offsetHeight : 40;
-                    const cH = cEl ? cEl.offsetHeight : 40;
-
-                    // 親の左下付近から子の左側中央へL字で結ぶ
-                    const startX = parent.x + 10;
-                    const startY = parent.y + pH - 5;
-                    const endX = n.x - 5;
-                    const endY = n.y + (cH / 2);
+        
+        familyNodes.forEach(n => {
+            if(n.parentId) {
+                const parent = familyNodes.find(p => p.id === n.parentId);
+                if(parent) {
+                    const px = (parent.tempX || 0) + 10; 
+                    const py = (parent.tempY || 0) + 30;
+                    const cx = (n.tempX || 0); 
+                    const cy = (n.tempY || 0) + 20;
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    // L字型パス (V と H を使用)
-                    path.setAttribute('d', `M ${startX},${startY} V ${endY} H ${endX}`); 
-                    path.setAttribute('stroke', 'rgba(156, 39, 176, 0.4)');
+                    // L字型の線で親子をわかりやすく
+                    path.setAttribute('d', `M ${px},${py} L ${px},${cy} L ${cx},${cy}`);
+                    path.setAttribute('stroke', 'rgba(128, 128, 128, 0.4)'); 
                     path.setAttribute('stroke-width', '2');
                     path.setAttribute('fill', 'none');
                     svg.appendChild(path);
@@ -1601,11 +1691,14 @@
     // --- AI まとめ生成 ---
     async function requestSummaryAI(texts) {
         if (!appData.openAiKey || !texts) return null;
-        const prompt = `以下の会話内容から話題を要約して下さい。
+        // 3行超要約にプロンプトを変更
+        const prompt = `以下の会話内容から全体を把握できる超要約を作成してください。
 ルール:
-1. 箇条書きの記号は一切使わず、自然な文章として要約すること。
-2. 最大3行程度の短く完結な文章にすること。
-出力JSONフォーマット: {"summary": "要約テキスト（改行は \\n で表現）"}
+1. 箇条書き（-や・など）は絶対に使わないこと。
+2. 必ず3行の文章で出力すること。
+3. 行の切れ目には改行文字 (\\n) を使用すること。
+4. 横長にならないよう、1行は20文字前後にまとめること。
+出力JSONフォーマット: {"summary": "1行目\\n2行目\\n3行目"}
 会話内容:
 ${texts.substring(0, 1500)}`;
 
@@ -1620,49 +1713,58 @@ ${texts.substring(0, 1500)}`;
         } catch(e) { return null; }
     }
 
-    async function refreshCanvasSummaryAI() {
-        if(!activeChatId) return;
-        const d = getActiveData();
-        const texts = (d.canvasNodes || []).map(n => n.text).filter(t => t).join("\n");
+    async function refreshCanvasSummaryAI(targetContextId) {
+        if(!targetContextId) return;
+        const nodes = appData.contacts[targetContextId].canvasNodes || [];
+        const texts = nodes.map(n => n.text).filter(t => t).join("\n");
         if(!texts) {
-            d.canvasSummary = ""; saveData(); updateSummaryPanel("", 'canvas'); return;
+            appData.contacts[targetContextId].canvasSummary = ""; saveData();
+            updateSummaryPanel("", 'canvas'); return;
         }
-        document.querySelector('#canvas-summary-panel .ai-summary-text').innerHTML = "🔄 処理中...";
+        document.querySelector('#canvas-summary-panel .ai-summary-text').innerHTML = "🔄 3行にまとめています...";
         const summary = await requestSummaryAI(texts);
         if(summary) {
-            d.canvasSummary = summary; saveData();
-            if(currentTab === 'canvas') updateSummaryPanel(summary, 'canvas');
-            sendNetworkMessage('update_summary', 'canvas', { space: 'canvas', summary });
+            appData.contacts[targetContextId].canvasSummary = summary; saveData();
+            if(activeContactId === targetContextId && currentTab === 'canvas') updateSummaryPanel(summary, 'canvas');
+            broadcastToRoom(targetContextId, { type: 'update_summary', payload: { space: 'canvas', summary, groupId: activeContactId } });
         }
     }
 
-    async function refreshTreeSummaryAI(rootId) {
-        if(!activeChatId || !rootId) return;
-        const d = getActiveData();
-        const texts = (d.treeNodes || []).map(n => n.text).filter(t => t).join("\n");
+    async function refreshTreeSummaryAI(targetContextId, rootId) {
+        if(!targetContextId || !rootId) return;
+        const nodes = appData.contacts[targetContextId].treeNodes || [];
+        const family = getTreeFamily(rootId, nodes);
+        const texts = family.map(n => n.text).filter(t => t).join("\n");
         if(!texts) { updateSummaryPanel("", 'tree'); return; }
         
-        document.querySelector('#tree-summary-panel .ai-summary-text').innerHTML = "🔄 処理中...";
+        document.querySelector('#tree-summary-panel .ai-summary-text').innerHTML = "🔄 3行にまとめています...";
         const summary = await requestSummaryAI(texts);
         if(summary) {
-            const rNode = d.treeNodes.find(n => n.id === rootId);
+            const rNode = nodes.find(n => n.id === rootId);
             if(rNode) rNode.treeSummary = summary; saveData();
-            if(currentTab === 'tree' && activeTreeRootId === rootId) updateSummaryPanel(summary, 'tree');
-            sendNetworkMessage('update_summary', 'tree', { space: 'tree', rootId, summary });
+            if(activeContactId === targetContextId && currentTab === 'tree' && activeTreeRootId === rootId) updateSummaryPanel(summary, 'tree');
+            broadcastToRoom(targetContextId, { type: 'update_summary', payload: { space: 'tree', rootId, summary, groupId: activeContactId } });
         }
     }
 
-    async function processEmotionAndTreeAI(text, nodeId, canvasParentId) {
+    // --- AI 通常解析 (配置と装飾) ---
+    async function processEmotionAndTreeAI(text, targetContextId, nodeId, canvasParentId) {
         if (!appData.openAiKey || !text) return; 
-        const d = getActiveData();
         
+        const contact = appData.contacts[targetContextId];
+        const treeContext = (contact.treeNodes || []).slice(-20).filter(n => n.id !== nodeId && n.text).map(n => ({id: n.id, text: n.text.substring(0,30)}));
+
         try {
-            const prompt = `発言: "${text}"
-以下のJSONフォーマットで返して下さい:
+            const prompt = `あなたはマインドマップ構築AIです。
+過去の履歴: ${JSON.stringify(treeContext)}
+新しい発言: "${text}"
+
+以下の厳密なJSONフォーマットで返して下さい:
 {
-  "formattedText": "元の発言テキストを適度な位置(15〜20文字程度)で改行(\\n)を挿入したもの。",
-  "fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16]",
-  "color": "#000000"
+  "formattedText": "元の発言テキストを、横に広がりすぎないように意味の切れ目など適度な位置(15〜20文字程度)で改行(\\n)を挿入したもの。",
+  "fontFamily": "[Zen Maru Gothic|Kaisei Decol|RocknRoll One|DotGothic16|Yusei Magic|M PLUS Rounded 1c|Shippori Mincho]",
+  "color": "[HEXカラーコード]",
+  "parentId": "関連する親ノードID（無ければnull）"
 }`;
 
             const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -1672,21 +1774,24 @@ ${texts.substring(0, 1500)}`;
             const data = await response.json();
             const updateData = JSON.parse(data.choices[0].message.content);
             
-            const cNode = d.canvasNodes.find(n => n.id === nodeId);
-            if(cNode) cNode.aiData = updateData;
+            const cNode = contact.canvasNodes.find(n => n.id === nodeId);
+            if(cNode) cNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, formattedText: updateData.formattedText };
 
-            const tNode = d.treeNodes.find(n => n.id === nodeId);
-            if(tNode) tNode.aiData = updateData;
-            
+            const tNode = contact.treeNodes.find(n => n.id === nodeId);
+            if(tNode) {
+                tNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, formattedText: updateData.formattedText };
+                tNode.parentId = canvasParentId || updateData.parentId;
+            }
             saveData();
 
-            sendNetworkMessage('update_node', 'canvas', { space: 'canvas', node: cNode });
-            sendNetworkMessage('update_node', 'tree', { space: 'tree', node: tNode });
+            broadcastToRoom(targetContextId, { type: 'update_node', payload: { space: 'canvas', node: cNode, groupId: activeContactId } });
+            broadcastToRoom(targetContextId, { type: 'update_node', payload: { space: 'tree', node: tNode, groupId: activeContactId } });
 
-            renderWorkspace(currentTab);
+            if(activeContactId === targetContextId) renderWorkspace(currentTab);
             
-            refreshCanvasSummaryAI();
-            refreshTreeSummaryAI(activeTreeRootId);
+            refreshCanvasSummaryAI(targetContextId);
+            const rId = getTreeRootId(nodeId, contact.treeNodes) || nodeId;
+            refreshTreeSummaryAI(targetContextId, rId);
 
         } catch(e) { console.error("AI解析エラー:", e); }
     }
