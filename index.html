@@ -81,12 +81,13 @@
         .chat-node.move-mode { border: 2px dashed var(--accent-color); z-index: 200 !important; }
         .chat-node.move-mode .node-header { background: rgba(0, 122, 255, 0.1); }
         
-        .action-handle { display: none; position: absolute; width: 32px; height: 32px; color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 201; pointer-events: auto; }
-        .move-handle { top: -12px; left: -12px; background: #4CAF50; cursor: grab; }
+        /* 編集ボタンの大型化 (32px -> 44px) */
+        .action-handle { display: none; position: absolute; width: 44px; height: 44px; color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); z-index: 201; pointer-events: auto; }
+        .move-handle { top: -20px; left: -20px; background: #4CAF50; cursor: grab; }
         .move-handle:active { cursor: grabbing; transform: scale(1.1); }
-        .del-handle { top: -12px; right: -12px; background: #f44336; cursor: pointer; } 
-        .link-handle { bottom: -12px; left: -12px; background: #9c27b0; cursor: pointer; } 
-        .expand-handle { bottom: -12px; right: -12px; background: #2196f3; cursor: pointer; font-size:12px; } 
+        .del-handle { top: -20px; right: -20px; background: #f44336; cursor: pointer; font-size: 24px;} 
+        .link-handle { bottom: -20px; left: -20px; background: #9c27b0; cursor: pointer; font-size: 20px;} 
+        .expand-handle { bottom: -20px; right: -20px; background: #2196f3; cursor: pointer; font-size: 16px; } 
         .chat-node.move-mode .action-handle { display: flex; }
 
         .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
@@ -115,7 +116,7 @@
         .chat-action-btn { background: var(--accent-color); color: white; border-radius: 50%; width: 44px; height: 44px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
         .reply-indicator { display: none; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(0, 122, 255, 0.1); color: var(--accent-color); font-size: 0.85rem; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-content { background: #fff; color: #333; width: 100%; max-width: 380px; border-radius: 20px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; max-height: 85vh; overflow-y: auto; }
         .settings-container { overflow-y: auto; padding: 15px; flex-grow:1; -webkit-overflow-scrolling: touch; }
         .form-group { margin-bottom: 20px; }
@@ -124,6 +125,9 @@
         
         .contact-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:8px; border:1px solid #eee; }
         .contact-item button { padding:6px 12px; border-radius:8px; font-weight:bold; cursor: pointer; border:none; }
+        
+        /* 画像プレビュー用 */
+        #img-preview-full { max-width: 95vw; max-height: 90vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
     </style>
 </head>
 <body data-theme="default">
@@ -185,8 +189,8 @@
     </div>
 
     <div class="chat-controls-bar">
-        <input type="file" id="file-input-canvas" style="display:none;" onchange="handleFileSelect(this)">
-        <button class="chat-action-btn" onclick="document.getElementById('file-input-canvas').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
+        <input type="file" id="file-input-canvas" accept="image/*" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn" onclick="document.getElementById('file-input-canvas').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📷</button>
         <textarea id="chat-input-text" class="chat-input" placeholder="メッセージを入力..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('canvas'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('canvas')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -218,8 +222,8 @@
     </div>
 
     <div class="chat-controls-bar">
-        <input type="file" id="file-input-tree" style="display:none;" onchange="handleFileSelect(this)">
-        <button class="chat-action-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📎</button>
+        <input type="file" id="file-input-tree" accept="image/*" style="display:none;" onchange="handleFileSelect(this)">
+        <button class="chat-action-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📷</button>
         <textarea id="tree-input-text" class="chat-input" placeholder="自動でツリーに配置されます..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('tree')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -307,6 +311,13 @@
         <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">表示したい話題の始まりを選択してください。</p>
         <div id="tree-manage-list" style="max-height:50vh; overflow-y:auto; margin-bottom:15px;"></div>
         <button onclick="document.getElementById('tree-manage-modal').style.display='none'" style="width:100%; padding:12px; background:rgba(0,0,0,0.1); border-radius:10px; font-weight:bold; color:#333; border:none;">閉じる</button>
+    </div>
+</div>
+
+<div id="image-view-modal" class="modal-overlay" onclick="closeImageModal()">
+    <div style="position:relative; max-width:100%; max-height:100%; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+        <img id="img-preview-full" src="" style="pointer-events:auto;" onclick="event.stopPropagation();">
+        <button onclick="closeImageModal()" style="position:absolute; top:-15px; right:-15px; background:#f44336; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:20px; font-weight:bold; cursor:pointer; pointer-events:auto; box-shadow:0 4px 10px rgba(0,0,0,0.3);">×</button>
     </div>
 </div>
 
@@ -451,7 +462,7 @@
     }
     
     function autoResize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight < 120 ? el.scrollHeight : 120) + 'px'; }
-    function handleEnter(e, sendFunc) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFunc(); e.target.style.height = 'auto'; } }
+    function handleEnter(e, sendFunc) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFunc(); } }
 
     function applyTheme() {
         document.body.setAttribute('data-theme', appData.theme || 'default');
@@ -616,19 +627,46 @@
         }
     }
 
-    // --- ファイル添付 ---
+    // --- 【修正】画像の圧縮とリサイズ処理 ---
     function handleFileSelect(input) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
+        
+        // 画像以外は弾く
+        if (!file.type.startsWith('image/')) {
+            alert("添付できるのは画像ファイルのみです。");
+            input.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
-            currentAttachedFile = {
-                name: file.name,
-                type: file.type,
-                isImage: file.type.startsWith('image/'),
-                dataBase64: e.target.result
+            const img = new Image();
+            img.onload = () => {
+                // 最大800pxに縮小して軽量化
+                const maxDim = 800;
+                let w = img.width, h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; } 
+                    else { w = Math.round((w * maxDim) / h); h = maxDim; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // 画質を0.8に落としてさらに軽量化
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                
+                currentAttachedFile = {
+                    name: file.name,
+                    type: 'image/jpeg',
+                    isImage: true,
+                    dataBase64: compressedBase64
+                };
+                showFilePreview();
             };
-            showFilePreview();
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
         input.value = '';
@@ -639,8 +677,6 @@
         const content = document.getElementById('global-input-preview-content');
         if(currentAttachedFile.isImage) {
             content.innerHTML = `<img src="${currentAttachedFile.dataBase64}" style="height:30px; border-radius:4px; vertical-align:middle;"> <span style="vertical-align:middle;">画像を添付中...</span>`;
-        } else {
-            content.innerHTML = `📎 ${currentAttachedFile.name}`;
         }
         document.getElementById('global-input-preview-area').style.display = 'block';
     }
@@ -648,6 +684,16 @@
     function removeAttachedFile() {
         currentAttachedFile = null;
         document.getElementById('global-input-preview-area').style.display = 'none';
+    }
+
+    // --- 画像の拡大表示プレビュー ---
+    function openImageModal(base64str) {
+        document.getElementById('img-preview-full').src = base64str;
+        document.getElementById('image-view-modal').style.display = 'flex';
+    }
+    function closeImageModal() {
+        document.getElementById('image-view-modal').style.display = 'none';
+        document.getElementById('img-preview-full').src = "";
     }
 
     // --- P2P & 同期 ---
@@ -1261,7 +1307,6 @@
         document.getElementById('tree-manage-modal').style.display = 'flex';
     }
 
-    // ツリーのルート（家族全体）の削除処理
     function deleteTreeFamilyUI(rootId, e) {
         e.stopPropagation();
         if(!confirm("このツリー（返信を含む全て）を削除しますか？\n※キャンバスからも消去されます")) return;
@@ -1278,7 +1323,7 @@
         
         saveData();
         
-        openTreeManageModal(); // モーダル内のリストを再描画
+        openTreeManageModal(); 
         renderWorkspace('canvas');
         renderWorkspace('tree');
         refreshCanvasSummaryAI(activeContactId);
@@ -1371,7 +1416,6 @@
             const passedReplyId = replyTargetId;
 
             let cx = 0, cy = 0;
-            // TreeからでもCanvasからでも、返信元があればその近くに自動配置
             if (passedReplyId) {
                 const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
                 cx = pos.x; cy = pos.y;
@@ -1386,7 +1430,10 @@
             contact.canvasNodes.push(canvasNode);
             contact.treeNodes.push(treeNode);
             
+            // --- 【修正】送信後に入力欄をリセット ---
             inputEl.value = ''; 
+            inputEl.style.height = '44px'; // 1行サイズに戻す
+            
             cancelReply(sourceSpace);
             if (file) removeAttachedFile();
             
@@ -1467,7 +1514,6 @@
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
                 layout[node.id] = { x: startX + (depth * 30), y: currentY };
-                // 名前・時間も枠内に入った分、高さを少し広めに取る
                 currentY += 70; 
                 if (node.file) currentY += 90;
                 if (node.text && node.text.length > 20) currentY += 25;
@@ -1526,7 +1572,7 @@
         const font = ai.fontFamily || 'inherit';
         const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
         const canvasFontSize = ai.fontSize || '0.95rem';
-        const treeFontSize = ai.fontSize ? `calc(${ai.fontSize} * 0.8)` : '0.9rem';
+        const treeFontSize = ai.fontSize ? `calc(${ai.fontSize} * 0.85)` : '0.9rem';
         const fontWeight = ai.fontWeight || 'bold';
         const timeStr = formatTime(node.timestamp);
         
@@ -1542,7 +1588,6 @@
             
             const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
-            // 名前・時間を枠の中に収納
             let contentHtml = `
                 <div class="tree-node-content">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(128,128,128,0.3); padding-bottom:4px; margin-bottom:6px; font-size:0.7rem; color:#666;">
@@ -1552,8 +1597,8 @@
                     <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color}; font-size:${treeFontSize}; font-weight:${fontWeight};">${displayText}</div>
             `;
             if (node.file) {
-                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; border-radius:6px; margin-top:4px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
-                else contentHtml += `<br><a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; font-size:0.8rem; background:rgba(0,0,0,0.05); padding:4px; border-radius:4px; text-decoration:none;">📎 ${node.file.name}</a>`;
+                // ツリー内の画像サムネイル。クリックでモーダル表示。
+                contentHtml += `<img src="${node.file.dataBase64}" style="max-height:80px; max-width:140px; object-fit:contain; border-radius:6px; margin-top:8px; pointer-events:auto; cursor:pointer;" onclick="openImageModal('${node.file.dataBase64}'); event.stopPropagation();">`;
             }
             contentHtml += `</div><div class="tree-controls">${replyBtn}</div>`;
             el.innerHTML = contentHtml;
@@ -1578,8 +1623,8 @@
                 contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color}; font-size:${canvasFontSize}; font-weight:${fontWeight};">${displayText}</div>`;
             }
             if (node.file) {
-                if (node.file.isImage) contentHtml += `<img src="${node.file.dataBase64}" style="max-width:100%; border-radius:8px; margin-top:8px; pointer-events:auto;" onclick="window.open('${node.file.dataBase64}', '_blank')">`;
-                else contentHtml += `<a href="${node.file.dataBase64}" download="${node.file.name}" style="pointer-events:auto; display:inline-block; margin-top:8px; padding:6px; background:rgba(0,0,0,0.05); border-radius:6px; text-decoration:none; font-size:0.8rem;">📎 ${node.file.name}</a>`;
+                // キャンバス内の画像サムネイル。クリックでモーダル表示。
+                contentHtml += `<img src="${node.file.dataBase64}" style="max-width:140px; max-height:140px; object-fit:contain; border-radius:8px; margin-top:8px; pointer-events:auto; cursor:pointer;" onclick="openImageModal('${node.file.dataBase64}'); event.stopPropagation();">`;
             }
             contentHtml += `</div>`;
             
@@ -1705,7 +1750,7 @@
                 const parent = familyNodes.find(p => p.id === n.parentId);
                 if(parent) {
                     const px = (parent.tempX || 0) + 10; 
-                    const py = (parent.tempY || 0) + 40; // 枠の調整に併せて線の始点も調整
+                    const py = (parent.tempY || 0) + 40; 
                     const cx = (n.tempX || 0); 
                     const cy = (n.tempY || 0) + 20;
 
@@ -1777,6 +1822,7 @@ ${texts.substring(0, 1500)}`;
         }
     }
 
+    // --- 【修正】多角的な感情表現AIの強化 ---
     async function processEmotionAndTreeAI(text, targetContextId, nodeId, canvasParentId) {
         if (!appData.openAiKey || !text) return; 
         
@@ -1788,12 +1834,17 @@ ${texts.substring(0, 1500)}`;
 過去の履歴: ${JSON.stringify(treeContext)}
 新しい発言: "${text}"
 
-発言の「感情（喜怒哀楽）」を強く判定し、それに合わせたデザインパラメータを出力してください。
-【感情ごとのデザインルール（厳守）】
-・喜び/楽しい/嬉しい: fontSizeは "1.3rem"〜"1.6rem", fontWeightは "900", fontFamilyは "M PLUS Rounded 1c" または "Yusei Magic", colorは "#ff4081" や "#ff9800" などの暖色。
-・悲しみ/落ち込み/不安: fontSizeは "0.75rem"〜"0.85rem", fontWeightは "normal", fontFamilyは "Shippori Mincho", colorは "#5c6bc0" や "#757575" などの寒色や暗色。
-・怒り/強い主張: fontSizeは "1.4rem"〜"1.7rem", fontWeightは "900", fontFamilyは "RocknRoll One" または "DotGothic16", colorは "#d32f2f" などの赤系。
-・普通/冷静: fontSizeは "0.95rem", fontWeightは "bold", fontFamilyは "Zen Maru Gothic" または "Noto Sans JP", colorは "var(--text-color)"。
+発言の「感情・ニュアンス」を多角的に判定し、デザインパラメータを出力してください。
+【感情・ニュアンスごとのデザインルール（厳守）】
+・喜び/楽しい/笑い: fontSizeは "1.2rem"〜"1.5rem", fontWeightは "900", fontFamilyは "M PLUS Rounded 1c" または "Yusei Magic", colorは "#ff4081" や "#ff9800"。
+・悲しみ/落ち込み: fontSizeは "0.8rem"〜"0.9rem", fontWeightは "normal", fontFamilyは "Shippori Mincho", colorは "#5c6bc0" や "#757575"。
+・怒り/強い主張/強調: fontSizeは "1.3rem"〜"1.6rem", fontWeightは "900", fontFamilyは "RocknRoll One" または "DotGothic16", colorは "#d32f2f" や "#e64a19"。
+・驚き/興奮: fontSizeは "1.4rem"〜"1.7rem", fontWeightは "900", fontFamilyは "Yusei Magic" または "DotGothic16", colorは "#00bcd4" または "#9c27b0"。
+・真面目/論理的/説明: fontSizeは "1.0rem"〜"1.1rem", fontWeightは "bold", fontFamilyは "Noto Sans JP" または "Zen Maru Gothic", colorは "#2c3e50" または "var(--text-color)"。
+・感謝/尊敬/優しさ: fontSizeは "1.0rem"〜"1.15rem", fontWeightは "bold", fontFamilyは "Kaisei Decol" または "Shippori Mincho", colorは "#388e3c" または "#d81b60"。
+・普通/冷静/日常: fontSizeは "1.0rem", fontWeight: "normal" または "bold", fontFamilyは "Zen Maru Gothic" または "Noto Sans JP", colorは "var(--text-color)"。
+
+※真面目な会話や長文の時は文字を小さくせず、「真面目/論理的」の基準（1.0rem〜1.1rem）を適用してください。
 
 以下の厳密なJSONフォーマットで返して下さい:
 {
