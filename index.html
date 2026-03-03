@@ -99,9 +99,7 @@
         .text-full { display: block; }
 
         .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; }
-        .tree-node-name { display: flex; align-items: center; font-size: 0.7rem; color: #666; margin-bottom: 4px; font-weight: bold; pointer-events: none; }
-        
-        .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 8px 12px; border-radius: 8px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 10px 14px; border-radius: 12px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .tree-node.mine .tree-node-content { border-left-color: #4CAF50; }
 
         .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; transition: font-size 0.3s; }
@@ -535,7 +533,6 @@
         setTimeout(() => { if(tabBtn.classList.contains('active')) document.getElementById('tab-highlight').style.width = tabBtn.offsetWidth + 'px'; }, 50);
     }
 
-    // --- 【修正】画像書き出し（確実なキャプチャ方法） ---
     async function exportCanvasAsImage() {
         if(!activeContactId) return;
         const btn = document.getElementById('btn-export-canvas');
@@ -545,16 +542,13 @@
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
             if(nodes.length === 0) { alert('書き出すノードがありません'); btn.innerText="📷 保存"; return; }
             
-            // 全ノードのバウンディングボックスを計算
             let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
             nodes.forEach(n => {
                 if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
                 if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
             });
-            // マージン
             minX -= 100; minY -= 100; maxX += 400; maxY += 300;
 
-            // 画面外に撮影用のコンテナを作成（これが真っ白バグを防ぐ）
             const captureArea = document.createElement('div');
             captureArea.style.position = 'absolute';
             captureArea.style.left = '-9999px';
@@ -566,7 +560,6 @@
             captureArea.style.fontFamily = "var(--app-font)";
             document.body.appendChild(captureArea);
 
-            // 1. ノードをクローンして座標を修正（transformではなくleft,topで配置）
             const nodesLayer = document.getElementById('canvas-nodes-container');
             const nodesClone = document.createElement('div');
             nodesClone.style.position = 'absolute';
@@ -579,13 +572,11 @@
                 const currentTop = parseFloat(clone.style.top) || 0;
                 clone.style.left = (currentLeft - minX) + 'px';
                 clone.style.top = (currentTop - minY) + 'px';
-                clone.style.transform = 'none'; // transformをリセット
-                // 余計なボタン類を削除して綺麗に
+                clone.style.transform = 'none'; 
                 clone.querySelectorAll('.action-handle').forEach(h => h.remove());
                 nodesClone.appendChild(clone);
             });
             
-            // 2. SVG（背景の線）をクローンして座標を修正
             const svgLayer = document.getElementById('canvas-svg-layer');
             const svgClone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svgClone.setAttribute('width', (maxX - minX) + 'px');
@@ -596,7 +587,6 @@
             const defs = svgLayer.querySelector('defs');
             if (defs) svgClone.appendChild(defs.cloneNode(true));
             
-            // SVGの線全体を <g> で囲んで平行移動
             const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             g.setAttribute('transform', `translate(${-minX}, ${-minY})`);
             Array.from(svgLayer.querySelectorAll('path')).forEach(p => g.appendChild(p.cloneNode(true)));
@@ -605,14 +595,13 @@
             captureArea.appendChild(svgClone);
             captureArea.appendChild(nodesClone);
 
-            // html2canvas実行
             const canvas = await html2canvas(captureArea, { 
                 backgroundColor: appData.theme === 'dark' ? '#1a1a1a' : '#f0f4f8',
                 scale: 1.5,
                 useCORS: true
             });
             
-            document.body.removeChild(captureArea); // お掃除
+            document.body.removeChild(captureArea); 
             
             const link = document.createElement('a');
             link.download = `Canvas_${formatTime(Date.now()).replace(/[\/ :]/g, '')}.png`;
@@ -1260,15 +1249,44 @@
                 const isCurrent = (activeTreeRootId === n.id);
                 list.innerHTML += `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:${isCurrent ? 'rgba(0,122,255,0.1)' : '#f9f9f9'}; border-radius:8px; margin-bottom:8px; border:1px solid ${isCurrent ? 'rgba(0,122,255,0.3)' : '#eee'}; cursor:pointer;" onclick="switchTreeRoot('${n.id}')">
-                        <div>
+                        <div style="flex-grow:1; overflow:hidden; padding-right:10px;">
                             <div style="font-size:0.7rem; color:#888;">${name} (${formatTime(n.timestamp)})</div>
-                            <div style="font-size:0.9rem; font-weight:bold; color:#333;">${text}</div>
+                            <div style="font-size:0.9rem; font-weight:bold; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${text}</div>
                         </div>
+                        <button onclick="deleteTreeFamilyUI('${n.id}', event)" style="background:#f44336; color:white; border:none; border-radius:6px; padding:6px 10px; font-weight:bold; cursor:pointer; flex-shrink:0;">削除</button>
                     </div>
                 `;
             });
         }
         document.getElementById('tree-manage-modal').style.display = 'flex';
+    }
+
+    // ツリーのルート（家族全体）の削除処理
+    function deleteTreeFamilyUI(rootId, e) {
+        e.stopPropagation();
+        if(!confirm("このツリー（返信を含む全て）を削除しますか？\n※キャンバスからも消去されます")) return;
+        
+        const contact = appData.contacts[activeContactId];
+        if(!contact) return;
+        
+        const familyIds = getTreeFamily(rootId, contact.treeNodes).map(n => n.id);
+        
+        contact.treeNodes = contact.treeNodes.filter(n => !familyIds.includes(n.id));
+        contact.canvasNodes = contact.canvasNodes.filter(n => !familyIds.includes(n.id));
+        
+        if(activeTreeRootId === rootId) activeTreeRootId = null; 
+        
+        saveData();
+        
+        openTreeManageModal(); // モーダル内のリストを再描画
+        renderWorkspace('canvas');
+        renderWorkspace('tree');
+        refreshCanvasSummaryAI(activeContactId);
+        
+        familyIds.forEach(id => {
+            broadcastToRoom(activeContactId, { type: 'delete_node', payload: { space: 'canvas', id, groupId: activeContactId } });
+            broadcastToRoom(activeContactId, { type: 'delete_node', payload: { space: 'tree', id, groupId: activeContactId } });
+        });
     }
 
     function switchTreeRoot(id) {
@@ -1353,14 +1371,13 @@
             const passedReplyId = replyTargetId;
 
             let cx = 0, cy = 0;
-            if (sourceSpace === 'canvas') {
-                if (passedReplyId) {
-                    const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
-                    cx = pos.x; cy = pos.y;
-                } else {
-                    const centerC = getCenterCoordinates('canvas');
-                    cx = centerC.x + (Math.random() - 0.5) * 150; cy = centerC.y + (Math.random() - 0.5) * 150;
-                }
+            // TreeからでもCanvasからでも、返信元があればその近くに自動配置
+            if (passedReplyId) {
+                const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
+                cx = pos.x; cy = pos.y;
+            } else {
+                const centerC = getCenterCoordinates('canvas');
+                cx = centerC.x + (Math.random() - 0.5) * 150; cy = centerC.y + (Math.random() - 0.5) * 150;
             }
 
             const canvasNode = { id, text, file, aiData: null, isMine: true, senderId: appData.myP2pId, x: cx, y: cy, parentId: passedReplyId, timestamp: Date.now(), isExpanded: false };
@@ -1450,9 +1467,10 @@
                 const node = allNodes.find(n => n.id === nodeId);
                 if(!node) return;
                 layout[node.id] = { x: startX + (depth * 30), y: currentY };
-                currentY += 50; 
+                // 名前・時間も枠内に入った分、高さを少し広めに取る
+                currentY += 70; 
                 if (node.file) currentY += 90;
-                if (node.text && node.text.length > 20) currentY += 20;
+                if (node.text && node.text.length > 20) currentY += 25;
 
                 const children = allNodes.filter(n => n.parentId === nodeId).sort((a,b)=>a.timestamp-b.timestamp);
                 children.forEach(c => calcLayout(c.id, depth + 1));
@@ -1507,9 +1525,8 @@
         const ai = node.aiData || {};
         const font = ai.fontFamily || 'inherit';
         const color = ai.color || (node.isMine ? '#000' : 'var(--text-color)');
-        // AIのパラメータ（強弱・感情）を反映
         const canvasFontSize = ai.fontSize || '0.95rem';
-        const treeFontSize = ai.fontSize ? `calc(${ai.fontSize} * 0.8)` : '0.9rem'; // ツリーは少し縮小して崩れを防ぐ
+        const treeFontSize = ai.fontSize ? `calc(${ai.fontSize} * 0.8)` : '0.9rem';
         const fontWeight = ai.fontWeight || 'bold';
         const timeStr = formatTime(node.timestamp);
         
@@ -1525,9 +1542,13 @@
             
             const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
+            // 名前・時間を枠の中に収納
             let contentHtml = `
-                <div class="tree-node-name">${senderName} <span style="margin-left:6px; font-weight:normal;">${timeStr}</span></div>
                 <div class="tree-node-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(128,128,128,0.3); padding-bottom:4px; margin-bottom:6px; font-size:0.7rem; color:#666;">
+                        <span style="font-weight:bold; color:var(--accent-color);">${senderName}</span>
+                        <span>${timeStr}</span>
+                    </div>
                     <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color}; font-size:${treeFontSize}; font-weight:${fontWeight};">${displayText}</div>
             `;
             if (node.file) {
@@ -1554,7 +1575,6 @@
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
             if(displayText) {
-                // ここで感情によるフォントサイズと太さを反映
                 contentHtml += `<div class="node-text ${isExpanded ? 'text-full' : 'text-collapsed'}" style="font-family:'${font}', sans-serif; color:${color}; font-size:${canvasFontSize}; font-weight:${fontWeight};">${displayText}</div>`;
             }
             if (node.file) {
@@ -1685,7 +1705,7 @@
                 const parent = familyNodes.find(p => p.id === n.parentId);
                 if(parent) {
                     const px = (parent.tempX || 0) + 10; 
-                    const py = (parent.tempY || 0) + 30;
+                    const py = (parent.tempY || 0) + 40; // 枠の調整に併せて線の始点も調整
                     const cx = (n.tempX || 0); 
                     const cy = (n.tempY || 0) + 20;
 
@@ -1757,7 +1777,6 @@ ${texts.substring(0, 1500)}`;
         }
     }
 
-    // --- 【修正】AI 強力感情パラメーター出力 ---
     async function processEmotionAndTreeAI(text, targetContextId, nodeId, canvasParentId) {
         if (!appData.openAiKey || !text) return; 
         
