@@ -71,7 +71,8 @@
         .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
         #canvas-minimap { position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.7; }
 
-        #toast-container { position: absolute; right: 15px; top: 180px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        /* トーストの位置をマップの下（top: 210px）に調整 */
+        #toast-container { position: absolute; right: 15px; top: 210px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         @keyframes popInToast { 0% { opacity: 0; transform: translateX(20px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
 
         .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
@@ -79,9 +80,8 @@
         
         .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 140px; max-width: 320px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
-        .chat-node.mine { border-color: rgba(0, 122, 255, 0.4); }
-        .chat-node.root-node { border: 3px solid #ff9800; box-shadow: 0 0 20px rgba(255, 152, 0, 0.3); }
-        .chat-node.move-mode { border: 2px dashed var(--accent-color); z-index: 200 !important; }
+        .chat-node.root-node { border: 3px solid #ff9800 !important; box-shadow: 0 0 20px rgba(255, 152, 0, 0.3) !important; }
+        .chat-node.move-mode { border: 2px dashed var(--accent-color) !important; z-index: 200 !important; }
         .chat-node.move-mode .node-header { background: rgba(0, 122, 255, 0.1); }
         
         .action-handle { display: none; position: absolute; width: 44px; height: 44px; color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.4); z-index: 201; pointer-events: auto; }
@@ -92,7 +92,7 @@
         .expand-handle { bottom: -20px; right: -20px; background: #2196f3; cursor: pointer; font-size: 16px; } 
         .chat-node.move-mode .action-handle { display: flex; }
 
-        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); background: rgba(0,0,0,0.03); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
+        .node-header { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; opacity: 0.9; padding: 10px 15px; border-bottom: 1px solid rgba(128,128,128,0.15); border-radius: 18px 18px 0 0; cursor: pointer; pointer-events: auto; }
         .node-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: #ccc; border: 1px solid rgba(0,0,0,0.1); pointer-events: none; }
         .node-time { font-size: 0.7em; color: #888; margin-left: auto; font-weight: normal; }
         .node-body { padding: 10px 15px 0 15px; cursor: pointer; pointer-events: auto; }
@@ -103,7 +103,6 @@
 
         .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; }
         .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 10px 14px; border-radius: 12px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .tree-node.mine .tree-node-content { border-left-color: #4CAF50; }
 
         .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; transition: font-size 0.3s; }
         
@@ -360,6 +359,28 @@
         tree:   { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
     };
 
+    function formatTime(ts) {
+        const d = new Date(ts || Date.now());
+        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    // --- ユーザーごとの色をIDから生成する関数 ---
+    function getUserColor(userId) {
+        if (!userId) return '#888888';
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) { hash = userId.charCodeAt(i) + ((hash << 5) - hash); }
+        const hue = Math.abs(hash) % 360;
+        const s = 70, l = 45;
+        const l_calc = l / 100;
+        const a = s * Math.min(l_calc, 1 - l_calc) / 100;
+        const f = n => {
+            const k = (n + hue / 30) % 12;
+            const color = l_calc - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color).toString(16).padStart(2, '0');
+        };
+        return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
     function initDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -393,11 +414,6 @@
             const store = tx.objectStore(STORE_NAME);
             store.put(appData, 'mainData');
         } catch(e) { console.error("DB Save Error", e); }
-    }
-
-    function formatTime(ts) {
-        const d = new Date(ts || Date.now());
-        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
     function initializeApp() {
@@ -499,14 +515,18 @@
         input.value = "";
     }
 
+    // --- パネルを常時表示（非表示にしない）ための変更 ---
     function updateSummaryPanel(summaryText, space) {
         const panel = document.getElementById(`${space}-summary-panel`);
         if(!panel) return;
+        
+        panel.style.display = 'flex'; // 常にflex
+        const textContainer = panel.querySelector('.ai-summary-text');
+        
         if(!summaryText) {
-            panel.style.display = 'none';
+            textContainer.innerHTML = '<span style="color:#aaa;">(会話が進むとAIが要約します)</span>';
         } else {
-            panel.style.display = 'flex';
-            panel.querySelector('.ai-summary-text').innerHTML = summaryText.replace(/\n/g, '<br>');
+            textContainer.innerHTML = summaryText.replace(/\n/g, '<br>');
         }
     }
 
@@ -538,8 +558,8 @@
             
             if(currentTab === 'canvas') {
                 updateSummaryPanel(contact.canvasSummary, 'canvas');
-            } else if (currentTab === 'tree' && activeTreeRootId) {
-                const rNode = contact.treeNodes.find(n => n.id === activeTreeRootId);
+            } else if (currentTab === 'tree') {
+                const rNode = activeTreeRootId ? contact.treeNodes.find(n => n.id === activeTreeRootId) : null;
                 updateSummaryPanel(rNode ? rNode.treeSummary : "", 'tree');
             }
         } else {
@@ -564,8 +584,9 @@
             
             let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
             nodes.forEach(n => {
-                if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
-                if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
+                const nx = n.x || 0; const ny = n.y || 0;
+                if(nx < minX) minX = nx; if(ny < minY) minY = ny;
+                if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
             });
             minX -= 100; minY -= 100; maxX += 400; maxY += 300;
 
@@ -785,7 +806,6 @@
     function sendRoomInvite(peerId, roomId, contact) {
         const conn = activeConnections[peerId];
         if(conn && conn.open) {
-            // 全メンバー情報（自分も含めて）送る
             const allMembers = contact.members.includes(appData.myP2pId) ? contact.members : [...contact.members, appData.myP2pId];
             conn.send({
                 type: 'room_invite',
@@ -886,7 +906,6 @@
                 updateOnlineIndicator();
                 if(activeContactId === peerId) updateTabUI();
             } 
-            // ----- ルーム自動招待・遷移処理 -----
             else if (data.type === 'room_invite') {
                 const { roomId, roomName, members } = data.payload;
                 const myMembers = members.filter(m => m !== appData.myP2pId);
@@ -894,7 +913,6 @@
                 if (!appData.contacts[roomId]) {
                     appData.contacts[roomId] = { isRoom: true, name: roomName || "招待されたルーム", members: myMembers, canvasNodes: [], treeNodes: [] };
                     saveData();
-                    // 他の人の招待を受けたら自動でその画面を開く
                     openContactHistory(roomId);
                 } else {
                     appData.contacts[roomId].members = [...new Set([...appData.contacts[roomId].members, ...myMembers])];
@@ -1163,7 +1181,7 @@
         }
     }
 
-    // --- トースト付箋表示 ---
+    // --- トースト付箋表示（表示時間延長） ---
     function showReplyToast(node, senderName) {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -1193,12 +1211,11 @@
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(-10px)';
             setTimeout(() => toast.remove(), 300);
-        }, 6000); 
+        }, 12000); 
     }
 
     function jumpToUnreadMessage(id) {
         const msgIndex = unreadMessages.findIndex(m => m.id === id);
-        // 付箋からのジャンプ用にメッセージ自体を探す
         let targetX = 0, targetY = 0;
         if (msgIndex !== -1) {
             targetX = unreadMessages[msgIndex].x; targetY = unreadMessages[msgIndex].y;
@@ -1263,8 +1280,9 @@
             if (nodes.length > 0) {
                 let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
                 nodes.forEach(n => {
-                    if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
-                    if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
+                    const nx = n.x || 0; const ny = n.y || 0;
+                    if(nx < minX) minX = nx; if(ny < minY) minY = ny;
+                    if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
                 });
                 minX -= 200; minY -= 200; maxX += 400; maxY += 400;
                 
@@ -1276,20 +1294,19 @@
 
                 ctx.clearRect(0,0,canvas.width,canvas.height);
 
+                // --- ユーザーごとの色を点に反映 ---
                 nodes.forEach(n => {
                     const cx = ox + (n.x - minX) * scale;
                     const cy = oy + (n.y - minY) * scale;
                     ctx.beginPath();
-                    ctx.arc(cx, cy, 3, 0, Math.PI*2);
                     
                     const unreadItem = unreadMessages.find(m => m.id === n.id && m.space === 'canvas');
                     if (unreadItem) {
-                        ctx.fillStyle = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50'; 
                         ctx.arc(cx, cy, 6, 0, Math.PI*2);
-                    } else if (n.isMine) {
-                        ctx.fillStyle = '#007aff';
+                        ctx.fillStyle = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50'; 
                     } else {
-                        ctx.fillStyle = '#999';
+                        ctx.arc(cx, cy, 3, 0, Math.PI*2);
+                        ctx.fillStyle = n.isMine ? '#007aff' : getUserColor(n.senderId);
                     }
                     ctx.fill();
                 });
@@ -1564,7 +1581,6 @@
                 const pos = getNonOverlappingCanvasPos(passedReplyId, contact.canvasNodes);
                 cx = pos.x; cy = pos.y;
             } else {
-                // 返信指定がなくても他のノードと重なりにくい位置を探す
                 const centerC = getCenterCoordinates('canvas');
                 let foundPos = false;
                 let angle = Math.random() * Math.PI * 2;
@@ -1700,6 +1716,7 @@
             drawCanvasLines();
             
             if(appData.contacts[activeContactId].canvasSummary) updateSummaryPanel(appData.contacts[activeContactId].canvasSummary, 'canvas');
+            else updateSummaryPanel("", 'canvas');
         }
         
         updateWorkspaceTransform(space);
@@ -1739,6 +1756,9 @@
         const safeText = node.text ? node.text.replace(/\n/g, '<br>') : '';
         const displayText = ai.formattedText ? ai.formattedText.replace(/\n/g, '<br>') : safeText;
         
+        // --- ユーザーごとの色を適用 ---
+        const userColor = node.isMine ? '#007aff' : getUserColor(node.senderId);
+
         if (space === 'tree') {
             el.className = `tree-node ${node.isMine ? 'mine' : 'theirs'}`;
             el.id = `node-tree-${node.id}`;
@@ -1749,9 +1769,9 @@
             const replyBtn = `<div class="tree-btn" onclick="setReplyTarget('${node.id}', '${senderName}', 'tree'); event.stopPropagation();">↩️</div>`;
             
             let contentHtml = `
-                <div class="tree-node-content">
+                <div class="tree-node-content" style="border-left-color: ${userColor};">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(128,128,128,0.3); padding-bottom:4px; margin-bottom:6px; font-size:0.7rem; color:#666;">
-                        <span style="font-weight:bold; color:var(--accent-color);">${senderName}</span>
+                        <span style="font-weight:bold; color:${userColor};">${senderName}</span>
                         <span>${timeStr}</span>
                     </div>
                     <div class="tree-node-text" style="font-family:'${font}', sans-serif; color:${color}; font-size:${treeFontSize}; font-weight:${fontWeight};">${displayText}</div>
@@ -1763,8 +1783,13 @@
             el.innerHTML = contentHtml;
             
         } else {
-            el.className = `chat-node ${node.isMine ? 'mine' : 'theirs'}`;
+            el.className = `chat-node`;
+            if (node.isMine) el.classList.add('mine');
             if (!node.parentId) el.classList.add('root-node'); 
+            
+            // ボーダーや影にユーザーの色を反映
+            el.style.borderColor = `${userColor}80`; 
+            el.style.boxShadow = `0 4px 15px ${userColor}1A`; 
             
             el.id = `node-canvas-${node.id}`;
             const safeX = node.x || 0; const safeY = node.y || 0;
@@ -1775,7 +1800,8 @@
             let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div><div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div><div class="action-handle link-handle" onclick="startLinkMode(event, '${node.id}')">🔗</div>` : `<div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div>`;
             let expandBtn = `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>`;
 
-            let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')"><img src="${senderIcon}" class="node-icon">${senderName} <span class="node-time">${timeStr}</span></div>`;
+            // ヘッダーにもユーザー色を反映
+            let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')" style="background: ${userColor}1A; border-bottom: 1px solid ${userColor}33;"><img src="${senderIcon}" class="node-icon"><span style="color:${userColor};">${senderName}</span> <span class="node-time">${timeStr}</span></div>`;
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
             if(displayText) {
@@ -1820,7 +1846,6 @@
                 }
             }
 
-            // 自分宛ての返信かつキャンバス画面であれば付箋(トースト)を出す
             if (space === 'canvas' && isReplyToMe) {
                 let senderName = connectionStatus[senderId]?.name || senderId;
                 showReplyToast(node, senderName);
@@ -1999,7 +2024,6 @@ ${texts.substring(0, 1500)}`;
         if (!appData.openAiKey || !text) return; 
         
         const contact = appData.contacts[targetContextId];
-        // 誰の発言かもAIに伝える
         const treeContext = (contact.treeNodes || []).slice(-20).filter(n => n.id !== nodeId && n.text).map(n => {
             let sName = "自分";
             if (!n.isMine) { sName = connectionStatus[n.senderId]?.name || n.senderId; }
