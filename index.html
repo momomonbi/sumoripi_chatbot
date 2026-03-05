@@ -69,7 +69,9 @@
         [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
         
-        .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
+        /* 新生ミニマップコンテナ */
+        .minimap-container { width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.3); margin-top: 5px; position: relative; }
+        .minimap-canvas { display: block; width: 100%; height: 100%; }
 
         #toast-container { position: absolute; right: 15px; top: 210px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         @keyframes popInToast { 0% { opacity: 0; transform: translateX(20px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
@@ -185,8 +187,7 @@
         <h4>🧠 3行まとめ</h4>
         <div class="ai-summary-text" style="font-size:0.75rem; color:#555;">(会話が進むとAIが要約します)</div>
         <div class="minimap-container" id="minimap-container">
-            <div id="minimap-viewport" style="position: absolute; border: 1.5px solid rgba(0, 122, 255, 0.8); background: rgba(0, 122, 255, 0.1); box-sizing: border-box; transition: all 0.1s;"></div>
-            <div id="minimap-dots" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
+            <canvas id="minimap-canvas" class="minimap-canvas"></canvas>
         </div>
     </div>
 
@@ -352,8 +353,8 @@
     let linkingSourceId = null;
     let activeTreeRootId = null; 
     let currentAttachedFile = null; 
-    let minimapAnimationId = null;
     let arrowAnimId = null;
+    let minimapLoop = null; // 確実に動かすためのsetIntervalのID
     
     let heartbeatTimer = null;
     let connectionStatus = {};
@@ -442,7 +443,7 @@
         initWorkspaces();
         startHeartbeat(); 
         
-        updateMinimap();
+        startRobustMinimap(); // 絶対に止まらないミニマップを起動
 
         const activeTab = document.querySelector('.tab.active');
         if(activeTab) {
@@ -475,7 +476,6 @@
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
         renderUnreadBadges();
         
-        // --- 設定セレクタの表示切り替え ---
         const spacingSelect = document.getElementById('spacing-selector');
         if (currentTab === 'canvas' && activeContactId) {
             spacingSelect.style.display = 'block';
@@ -487,7 +487,6 @@
         if(currentTab === 'canvas') sendViewportUpdate();
     }
 
-    // --- ノード間隔の変更と同期 ---
     function changeNodeSpacing(val) {
         if (!activeContactId) return;
         appData.contacts[activeContactId].nodeSpacing = val;
@@ -962,7 +961,6 @@
             else if (data.type === 'viewport') {
                 userViewports[peerId] = { x: data.payload.x, y: data.payload.y, time: Date.now() };
             }
-            // --- 間隔設定の同期受信 ---
             else if (data.type === 'update_spacing') {
                 const targetContextId = data.payload.groupId || peerId;
                 if (appData.contacts[targetContextId]) {
@@ -1012,7 +1010,6 @@
                 const contact = appData.contacts[contextId];
                 if (!contact) return;
                 
-                // 間隔設定の同期
                 if (data.payload.nodeSpacing && !contact.nodeSpacing) {
                     contact.nodeSpacing = data.payload.nodeSpacing;
                     saveData();
@@ -1201,7 +1198,7 @@
         return { x: (cont.offsetWidth / 2) - vs.panX, y: (cont.offsetHeight / 2) - vs.panY };
     }
 
-    // --- 新着未読・ナビゲーション・トースト・ミニマップ更新 ---
+    // --- 新着未読・ナビゲーション・トースト ---
     function addUnreadMessage(node, space) {
         if(unreadMessages.some(m => m.id === node.id)) return;
         
@@ -1348,146 +1345,150 @@
         arrowAnimId = requestAnimationFrame(updateReplyArrowDirection);
     }
 
-    // --- ミニマップ（DOM方式に完全リニューアル） ---
-    function updateMinimap() {
-        if (currentTab === 'canvas' && activeContactId && appData.contacts[activeContactId]) {
+    // --- 絶対に死なない堅牢なミニマップ処理 (Canvas + setInterval方式) ---
+    function startRobustMinimap() {
+        if(minimapLoop) clearInterval(minimapLoop);
+        minimapLoop = setInterval(drawMinimap, 100); // 1秒間に10回更新で十分滑らか
+    }
+
+    function drawMinimap() {
+        try {
+            if (currentTab !== 'canvas' || !activeContactId) return;
+
             const container = document.getElementById('minimap-container');
-            const dotsContainer = document.getElementById('minimap-dots');
-            const vpEl = document.getElementById('minimap-viewport');
-            
-            if(!container || !dotsContainer || !vpEl) {
-                minimapAnimationId = requestAnimationFrame(updateMinimap);
-                return;
+            const canvas = document.getElementById('minimap-canvas');
+            if (!container || !canvas) return;
+
+            // DOMから実際の表示サイズを取得
+            const rect = container.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
+            // ※超重要※ サイズが変更された時だけcanvasのピクセルサイズを上書きする
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
             }
-            
-            const cw = container.clientWidth;
-            const ch = container.clientHeight;
-            if (cw === 0 || ch === 0) {
-                minimapAnimationId = requestAnimationFrame(updateMinimap);
-                return;
-            }
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
             
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            let validNodesCount = 0;
+            let hasPoints = false;
             
+            // 1. ノードの範囲を取得
             nodes.forEach(n => {
-                if(n.x !== undefined && n.y !== undefined) {
-                    if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
-                    if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
-                    validNodesCount++;
+                if(typeof n.x === 'number' && typeof n.y === 'number') {
+                    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+                    maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
+                    hasPoints = true;
                 }
             });
             
-            if(validNodesCount === 0) {
-                const center = getCenterCoordinates('canvas');
-                minX = center.x - 500; minY = center.y - 500;
-                maxX = center.x + 500; maxY = center.y + 500;
+            // 2. 自分の見ている範囲を取得
+            const cont = document.getElementById('canvas-workspace');
+            const vs = viewStates['canvas'];
+            const vpW = cont.offsetWidth;
+            const vpH = cont.offsetHeight;
+            const vpX = -vs.panX;
+            const vpY = -vs.panY;
+
+            if (vpW > 0 && vpH > 0) {
+                minX = Math.min(minX, vpX); minY = Math.min(minY, vpY);
+                maxX = Math.max(maxX, vpX + vpW); maxY = Math.max(maxY, vpY + vpH);
+                hasPoints = true;
             }
             
+            // 3. 他のユーザーの範囲を取得
             const now = Date.now();
             Object.keys(userViewports).forEach(id => {
                 const vp = userViewports[id];
                 if (now - vp.time < 30000) { 
-                    if(vp.x < minX) minX = vp.x; if(vp.y < minY) minY = vp.y;
-                    if(vp.x > maxX) maxX = vp.x; if(vp.y > maxY) maxY = vp.y;
+                    minX = Math.min(minX, vp.x); minY = Math.min(minY, vp.y);
+                    maxX = Math.max(maxX, vp.x); maxY = Math.max(maxY, vp.y);
+                    hasPoints = true;
                 }
             });
 
-            minX -= 400; minY -= 400; maxX += 400; maxY += 400;
+            // 万が一何もなくてもエラーにならないようにする
+            if (!hasPoints) {
+                minX = -1000; minY = -1000; maxX = 1000; maxY = 1000;
+            }
+
+            // 余白をつけてスケール計算
+            const padding = 400;
+            minX -= padding; minY -= padding; maxX += padding; maxY += padding;
             
-            const w = maxX - minX; const h = maxY - minY;
-            const scaleX = cw / w; const scaleY = ch / h;
+            const contentW = Math.max(maxX - minX, 1);
+            const contentH = Math.max(maxY - minY, 1);
+
+            const scaleX = canvas.width / contentW;
+            const scaleY = canvas.height / contentH;
             const scale = Math.min(scaleX, scaleY);
-            const ox = (cw - w * scale) / 2;
-            const oy = (ch - h * scale) / 2;
 
-            const existingDots = {};
-            Array.from(dotsContainer.children).forEach(el => existingDots[el.id] = el);
+            // 中央寄せのオフセット
+            const ox = (canvas.width - contentW * scale) / 2;
+            const oy = (canvas.height - contentH * scale) / 2;
 
-            // 1. ノードの点
+            // --- 描画処理 ---
+            
+            // ノードの点
             nodes.forEach(n => {
-                const dotId = `minimap-dot-${n.id}`;
-                let dot = existingDots[dotId];
-                if (!dot) {
-                    dot = document.createElement('div');
-                    dot.id = dotId;
-                    dot.style.position = 'absolute';
-                    dot.style.borderRadius = '50%';
-                    dot.style.transform = 'translate(-50%, -50%)';
-                    dot.style.transition = 'left 0.1s linear, top 0.1s linear';
-                    dotsContainer.appendChild(dot);
+                const cx = ox + (n.x - minX) * scale;
+                const cy = oy + (n.y - minY) * scale;
+                
+                ctx.beginPath();
+                const isUnread = unreadMessages.some(m => m.id === n.id && m.space === 'canvas');
+                if (isUnread) {
+                    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = isUnread.isReplyToMe ? '#ff3b30' : '#4CAF50';
                 } else {
-                    delete existingDots[dotId];
+                    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = n.isMine ? '#007aff' : getUserColor(n.senderId);
                 }
-                
-                const cx = ox + ((n.x||0) - minX) * scale;
-                const cy = oy + ((n.y||0) - minY) * scale;
-                
-                dot.style.left = `${cx}px`;
-                dot.style.top = `${cy}px`;
-                
-                const unreadItem = unreadMessages.find(m => m.id === n.id && m.space === 'canvas');
-                if (unreadItem) {
-                    dot.style.width = '10px'; dot.style.height = '10px';
-                    dot.style.background = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50';
-                    dot.style.zIndex = '10';
-                } else {
-                    dot.style.width = '6px'; dot.style.height = '6px';
-                    dot.style.background = n.isMine ? '#007aff' : getUserColor(n.senderId);
-                    dot.style.zIndex = '5';
-                }
+                ctx.fill();
             });
 
-            // 2. ユーザーの現在地
+            // 自分の表示領域枠
+            const mapVpX = ox + (vpX - minX) * scale;
+            const mapVpY = oy + (vpY - minY) * scale;
+            const mapVpW = Math.max(vpW * scale, 2);
+            const mapVpH = Math.max(vpH * scale, 2);
+
+            ctx.strokeStyle = 'rgba(0, 122, 255, 0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(mapVpX, mapVpY, mapVpW, mapVpH);
+            ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
+            ctx.fillRect(mapVpX, mapVpY, mapVpW, mapVpH);
+
+            // 他のユーザーの現在地
             Object.keys(userViewports).forEach(id => {
+                if (id === appData.myP2pId) return; // 自分は枠で表現するのでスキップ
                 const vp = userViewports[id];
                 if (now - vp.time < 30000) {
-                    const dotId = `minimap-user-${id}`;
-                    let dot = existingDots[dotId];
-                    if (!dot) {
-                        dot = document.createElement('div');
-                        dot.id = dotId;
-                        dot.style.position = 'absolute';
-                        dot.style.transform = 'translate(-50%, -50%)';
-                        dot.style.transition = 'left 0.1s linear, top 0.1s linear';
-                        dot.style.zIndex = '20';
-                        dot.innerHTML = `<div style="width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-sizing:border-box;"></div><div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:bold; color:#333; white-space:nowrap; text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;"></div>`;
-                        dotsContainer.appendChild(dot);
-                    } else {
-                        delete existingDots[dotId];
-                    }
-                    
                     const cx = ox + (vp.x - minX) * scale;
                     const cy = oy + (vp.y - minY) * scale;
-                    const color = id === appData.myP2pId ? '#007aff' : getUserColor(id);
-                    const name = id === appData.myP2pId ? appData.userName : (connectionStatus[id]?.name || id);
+                    const color = getUserColor(id);
                     
-                    dot.style.left = `${cx}px`;
-                    dot.style.top = `${cy}px`;
-                    dot.children[0].style.backgroundColor = color;
-                    dot.children[1].innerText = name;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 5, 0, Math.PI*2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    const name = connectionStatus[id]?.name || id;
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(name, cx + 8, cy + 3);
                 }
             });
 
-            // 消えたものを削除
-            Object.values(existingDots).forEach(el => el.remove());
-
-            // 3. 自分の見ている範囲
-            const cont = document.getElementById('canvas-workspace');
-            const vs = viewStates['canvas'];
-            const vpX = ox + (-vs.panX - minX) * scale;
-            const vpY = oy + (-vs.panY - minY) * scale;
-            const vpW = cont.offsetWidth * scale;
-            const vpH = cont.offsetHeight * scale;
-            
-            vpEl.style.left = `${vpX}px`;
-            vpEl.style.top = `${vpY}px`;
-            vpEl.style.width = `${vpW}px`;
-            vpEl.style.height = `${vpH}px`;
+        } catch(e) {
+            console.error("Minimap Drawing Error:", e);
         }
-        minimapAnimationId = requestAnimationFrame(updateMinimap);
     }
 
     // --- フォースレイアウト（設定対応＆絶対反発力） ---
@@ -1513,7 +1514,6 @@
         let velocities = {};
         nodes.forEach(n => velocities[n.id] = {x: 0, y: 0});
 
-        // 設定の読み込み
         const spacingType = appData.contacts[activeContactId].nodeSpacing || 'normal';
         let springLen, repelDist, repelStrength, edgeRepelDist, collisionDist;
         
@@ -1522,7 +1522,6 @@
         } else if (spacingType === 'wide') { 
             springLen = 500; repelDist = 600; repelStrength = 200000; edgeRepelDist = 250; collisionDist = 300;
         } else { 
-            // normal
             springLen = 320; repelDist = 400; repelStrength = 120000; edgeRepelDist = 180; collisionDist = 250;
         }
         
@@ -1535,7 +1534,7 @@
                 let dist = Math.hypot(dx, dy);
                 if (dist === 0) { dx = Math.random(); dy = Math.random(); dist = Math.hypot(dx, dy); }
                 
-                // 絶対に重ならないための強力なコリジョン（衝突）反発
+                // 重なり防止の絶対反発力
                 if (dist < collisionDist) {
                     const force = (collisionDist - dist) * 0.4; 
                     velocities[n1.id].x += (dx/dist)*force; velocities[n1.id].y += (dy/dist)*force;
