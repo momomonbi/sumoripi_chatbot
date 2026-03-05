@@ -69,9 +69,8 @@
         [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
         .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
-        #canvas-minimap { position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.7; }
+        #canvas-minimap { position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.9; }
 
-        /* トーストの位置をマップの下（top: 210px）に調整 */
         #toast-container { position: absolute; right: 15px; top: 210px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         @keyframes popInToast { 0% { opacity: 0; transform: translateX(20px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
 
@@ -176,9 +175,9 @@
         <div id="online-list-canvas" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
     
-    <div class="ai-summary-panel" id="canvas-summary-panel" style="display:none;">
+    <div class="ai-summary-panel" id="canvas-summary-panel" style="display:flex;">
         <h4>🧠 3行まとめ</h4>
-        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;"></div>
+        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;">(会話が進むとAIが要約します)</div>
         <div class="minimap-container">
             <canvas id="canvas-minimap"></canvas>
         </div>
@@ -212,9 +211,9 @@
         <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">📡 接続状況</div>
         <div id="online-list-tree" style="font-size: 0.85rem; font-weight: bold;">(誰もいません)</div>
     </div>
-    <div class="ai-summary-panel" id="tree-summary-panel" style="display:none;">
+    <div class="ai-summary-panel" id="tree-summary-panel" style="display:flex;">
         <h4>🧠 3行まとめ</h4>
-        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;"></div>
+        <div class="ai-summary-text" style="font-size:0.75rem; color:#555;">(会話が進むとAIが要約します)</div>
     </div>
 
     <div class="workspace-container" id="tree-workspace">
@@ -353,6 +352,12 @@
     let connectionStatus = {};
     
     let unreadMessages = [];
+    let userViewports = {}; // 各ユーザーの現在のキャンバス中心位置
+    let lastViewportSend = 0;
+
+    let physicsActive = false;
+    let physicsAnimId = null;
+    let activeNodeDrag = null;
 
     const viewStates = {
         canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
@@ -364,7 +369,7 @@
         return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
-    // --- ユーザーごとの色をIDから生成する関数 ---
+    // ユーザーごとの色をIDから生成
     function getUserColor(userId) {
         if (!userId) return '#888888';
         let hash = 0;
@@ -463,6 +468,7 @@
         
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
         renderUnreadBadges();
+        if(currentTab === 'canvas') sendViewportUpdate();
     }
 
     function handleCanvasTabClick(tabEl) {
@@ -515,12 +521,11 @@
         input.value = "";
     }
 
-    // --- パネルを常時表示（非表示にしない）ための変更 ---
     function updateSummaryPanel(summaryText, space) {
         const panel = document.getElementById(`${space}-summary-panel`);
         if(!panel) return;
         
-        panel.style.display = 'flex'; // 常にflex
+        panel.style.display = 'flex';
         const textContainer = panel.querySelector('.ai-summary-text');
         
         if(!summaryText) {
@@ -783,7 +788,6 @@
         
         if(!inputIds) return alert('IDを入力してください');
         
-        // スペースまたはカンマで区切る
         const ids = inputIds.split(/[\s,]+/).map(s=>s.trim()).filter(s=>s.length>0);
         
         if (ids.length === 1 && !roomName) {
@@ -827,6 +831,7 @@
         updateTabUI(); 
         renderWorkspace(currentTab);
         renderUnreadBadges();
+        if (currentTab === 'canvas') sendViewportUpdate();
         
         const peersToConnect = contact?.isRoom ? contact.members : [targetId];
         peersToConnect.forEach(peerId => {
@@ -839,6 +844,7 @@
                 if (contact?.isRoom) sendRoomInvite(peerId, targetId, contact);
             }
         });
+        startPhysics();
     }
 
     function initiateSyncForPeer(peerId, contextId) {
@@ -859,6 +865,7 @@
             renderWorkspace('tree');
             refreshCanvasSummaryAI(contextId);
             if(activeTreeRootId) refreshTreeSummaryAI(contextId, activeTreeRootId);
+            startPhysics();
         }
     }
 
@@ -918,6 +925,10 @@
                     appData.contacts[roomId].members = [...new Set([...appData.contacts[roomId].members, ...myMembers])];
                     saveData();
                 }
+            }
+            // --- 所在ビーコンの受信 ---
+            else if (data.type === 'viewport') {
+                userViewports[peerId] = { x: data.payload.x, y: data.payload.y, time: Date.now() };
             }
             else if (data.type === 'new_node' || data.type === 'update_node' || data.type === 'delete_node' || data.type === 'clear_canvas' || data.type === 'update_summary' || data.type === 'toggle_collapse') {
                 const targetContextId = data.payload.groupId || peerId;
@@ -1091,6 +1102,7 @@
                     viewStates[space].panX = e.clientX - viewStates[space].startX;
                     viewStates[space].panY = e.clientY - viewStates[space].startY;
                     updateWorkspaceTransform(space);
+                    if (space === 'canvas') sendViewportUpdate();
                 }
                 handleNodePointerMove(e, space); 
             };
@@ -1103,11 +1115,28 @@
         });
     }
 
+    // 自分の現在地を定期的にブロードキャスト
+    function sendViewportUpdate() {
+        if (!activeContactId || currentTab !== 'canvas') return;
+        const now = Date.now();
+        if (now - lastViewportSend < 150) return; // 送信頻度制限
+        lastViewportSend = now;
+        
+        const cont = document.getElementById('canvas-workspace');
+        const vs = viewStates['canvas'];
+        const centerX = (cont.offsetWidth / 2) - vs.panX;
+        const centerY = (cont.offsetHeight / 2) - vs.panY;
+        
+        userViewports[appData.myP2pId] = { x: centerX, y: centerY, time: now };
+        broadcastToRoom(activeContactId, { type: 'viewport', payload: { x: centerX, y: centerY } });
+    }
+
     function resetWorkspaceView() {
         const cont = document.getElementById(`${currentTab}-workspace`);
         viewStates[currentTab].panX = -4000 + (cont.offsetWidth / 2);
         viewStates[currentTab].panY = -4000 + (cont.offsetHeight / 2);
         updateWorkspaceTransform(currentTab);
+        if (currentTab === 'canvas') sendViewportUpdate();
     }
 
     function updateWorkspaceTransform(space) {
@@ -1234,6 +1263,7 @@
         vs.panX = (cont.offsetWidth / 2) - targetX;
         vs.panY = (cont.offsetHeight / 2) - targetY;
         updateWorkspaceTransform(currentTab);
+        if (currentTab === 'canvas') sendViewportUpdate();
     }
 
     function updateReplyArrowDirection() {
@@ -1273,18 +1303,35 @@
             const canvas = document.getElementById('canvas-minimap');
             const ctx = canvas.getContext('2d');
             const parent = canvas.parentElement;
-            canvas.width = parent.clientWidth;
-            canvas.height = parent.clientHeight;
             
+            // キャンバスサイズ更新
+            if(parent.clientWidth > 0 && parent.clientHeight > 0) {
+                canvas.width = parent.clientWidth;
+                canvas.height = parent.clientHeight;
+            }
+
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
             if (nodes.length > 0) {
                 let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+                
+                // ノードの位置を考慮
                 nodes.forEach(n => {
                     const nx = n.x || 0; const ny = n.y || 0;
                     if(nx < minX) minX = nx; if(ny < minY) minY = ny;
                     if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
                 });
-                minX -= 200; minY -= 200; maxX += 400; maxY += 400;
+                
+                // 各ユーザーの所在(Viewport)も考慮
+                const now = Date.now();
+                Object.keys(userViewports).forEach(id => {
+                    const vp = userViewports[id];
+                    if (now - vp.time < 30000) { // 30秒以内のアクティブユーザー
+                        if(vp.x < minX) minX = vp.x; if(vp.y < minY) minY = vp.y;
+                        if(vp.x > maxX) maxX = vp.x; if(vp.y > maxY) maxY = vp.y;
+                    }
+                });
+                
+                minX -= 300; minY -= 300; maxX += 500; maxY += 500;
                 
                 const w = maxX - minX; const h = maxY - minY;
                 const scaleX = canvas.width / w; const scaleY = canvas.height / h;
@@ -1294,7 +1341,7 @@
 
                 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-                // --- ユーザーごとの色を点に反映 ---
+                // --- 1. ノードの点 ---
                 nodes.forEach(n => {
                     const cx = ox + (n.x - minX) * scale;
                     const cy = oy + (n.y - minY) * scale;
@@ -1302,15 +1349,17 @@
                     
                     const unreadItem = unreadMessages.find(m => m.id === n.id && m.space === 'canvas');
                     if (unreadItem) {
-                        ctx.arc(cx, cy, 6, 0, Math.PI*2);
+                        ctx.arc(cx, cy, 5, 0, Math.PI*2);
                         ctx.fillStyle = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50'; 
+                        ctx.fill();
                     } else {
                         ctx.arc(cx, cy, 3, 0, Math.PI*2);
                         ctx.fillStyle = n.isMine ? '#007aff' : getUserColor(n.senderId);
+                        ctx.fill();
                     }
-                    ctx.fill();
                 });
 
+                // --- 2. 自分の見ている範囲(枠) ---
                 const cont = document.getElementById('canvas-workspace');
                 const vs = viewStates['canvas'];
                 const vpX = ox + (-vs.panX - minX) * scale;
@@ -1323,9 +1372,149 @@
                 ctx.strokeRect(vpX, vpY, vpW, vpH);
                 ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
                 ctx.fillRect(vpX, vpY, vpW, vpH);
+
+                // --- 3. 各ユーザーの所在ビーコン ---
+                Object.keys(userViewports).forEach(id => {
+                    const vp = userViewports[id];
+                    if (now - vp.time < 30000) {
+                        const cx = ox + (vp.x - minX) * scale;
+                        const cy = oy + (vp.y - minY) * scale;
+                        const color = id === appData.myP2pId ? '#007aff' : getUserColor(id);
+                        const name = id === appData.myP2pId ? appData.userName : (connectionStatus[id]?.name || id);
+                        
+                        // 大きめの点
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 6, 0, Math.PI*2);
+                        ctx.fillStyle = color;
+                        ctx.fill();
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.stroke();
+                        
+                        // 名前
+                        ctx.fillStyle = color;
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.fillText(name, cx + 10, cy + 4);
+                    }
+                });
             }
         }
         minimapAnimationId = requestAnimationFrame(updateMinimap);
+    }
+
+    // --- フォースレイアウト（物理演算）---
+    function startPhysics() {
+        if (!physicsActive) {
+            physicsActive = true;
+            physicsAnimId = requestAnimationFrame(simulatePhysics);
+        }
+    }
+
+    function simulatePhysics() {
+        if (currentTab !== 'canvas' || !activeContactId) {
+            physicsActive = false;
+            return;
+        }
+        const nodes = appData.contacts[activeContactId].canvasNodes || [];
+        if (!nodes || nodes.length < 2) {
+            physicsActive = false;
+            return;
+        }
+
+        let moved = false;
+        let velocities = {};
+        nodes.forEach(n => velocities[n.id] = {x: 0, y: 0});
+
+        const repelStrength = 150000;
+        const springLen = 350;
+        const springK = 0.02;
+
+        // ノード同士の反発（重なり防止）
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const n1 = nodes[i]; const n2 = nodes[j];
+                let dx = (n1.x||0) - (n2.x||0); let dy = (n1.y||0) - (n2.y||0);
+                let distSq = dx*dx + dy*dy;
+                if(distSq === 0) { dx = Math.random(); dy = Math.random(); distSq = dx*dx+dy*dy; }
+                if (distSq < 400000) { // 近い場合のみ
+                    const dist = Math.sqrt(distSq);
+                    const force = repelStrength / distSq;
+                    velocities[n1.id].x += (dx/dist)*force; velocities[n1.id].y += (dy/dist)*force;
+                    velocities[n2.id].x -= (dx/dist)*force; velocities[n2.id].y -= (dy/dist)*force;
+                }
+            }
+        }
+
+        // ケーブルの引き合い（スプリング）
+        nodes.forEach(n => {
+            if(n.parentId) {
+                const p = nodes.find(x => x.id === n.parentId);
+                if (p) {
+                    let dx = (p.x||0) - (n.x||0); let dy = (p.y||0) - (n.y||0);
+                    let dist = Math.hypot(dx, dy);
+                    if (dist > 0) {
+                        const force = (dist - springLen) * springK; 
+                        velocities[n.id].x += (dx/dist)*force; velocities[n.id].y += (dy/dist)*force;
+                        velocities[p.id].x -= (dx/dist)*force; velocities[p.id].y -= (dy/dist)*force;
+                    }
+                }
+            }
+        });
+
+        // ノードとケーブルの反発（ケーブルがノードの下敷きになるのを防ぐ）
+        nodes.forEach(n => {
+            nodes.forEach(edgeNode => {
+                if (edgeNode.parentId && edgeNode.id !== n.id && edgeNode.parentId !== n.id) {
+                    const p = nodes.find(x => x.id === edgeNode.parentId);
+                    if (p) {
+                        const p0 = {x: n.x||0, y: n.y||0};
+                        const p1 = {x: p.x||0, y: p.y||0};
+                        const p2 = {x: edgeNode.x||0, y: edgeNode.y||0};
+                        
+                        const l2 = Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
+                        if (l2 === 0) return;
+                        let t = ((p0.x - p1.x) * (p2.x - p1.x) + (p0.y - p1.y) * (p2.y - p1.y)) / l2;
+                        t = Math.max(0, Math.min(1, t));
+                        const projX = p1.x + t * (p2.x - p1.x);
+                        const projY = p1.y + t * (p2.y - p1.y);
+                        
+                        let dx = p0.x - projX; let dy = p0.y - projY;
+                        let dist = Math.hypot(dx, dy);
+                        
+                        const minDist = 220; // ケーブルからノードを遠ざける距離
+                        if (dist < minDist && dist > 0) {
+                            const force = (minDist - dist) * 0.15;
+                            velocities[n.id].x += (dx/dist)*force; velocities[n.id].y += (dy/dist)*force;
+                        }
+                    }
+                }
+            });
+        });
+
+        let maxMovement = 0;
+        nodes.forEach(n => {
+            if (activeNodeDrag && activeNodeDrag.id === n.id) return; // ドラッグ中は除外
+            
+            let vx = Math.max(-20, Math.min(20, velocities[n.id].x)); // 速度制限
+            let vy = Math.max(-20, Math.min(20, velocities[n.id].y));
+            
+            if (Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5) {
+                n.x = (n.x||0) + vx; n.y = (n.y||0) + vy;
+                moved = true;
+                maxMovement = Math.max(maxMovement, Math.abs(vx), Math.abs(vy));
+                
+                const el = document.getElementById(`node-canvas-${n.id}`);
+                if (el) { el.style.left = `${n.x}px`; el.style.top = `${n.y}px`; }
+            }
+        });
+
+        if (moved && maxMovement > 0.5) {
+            drawCanvasLines();
+            physicsAnimId = requestAnimationFrame(simulatePhysics);
+        } else {
+            physicsActive = false;
+            saveData(); // 落ち着いたら保存
+        }
     }
 
     // --- 操作ロジック ---
@@ -1371,6 +1560,7 @@
                 broadcastToRoom(activeContactId, { type: 'update_node', payload: { space: 'canvas', node: cNode, groupId: activeContactId } });
                 broadcastToRoom(activeContactId, { type: 'update_node', payload: { space: 'tree', node: tNode, groupId: activeContactId } });
                 refreshCanvasSummaryAI(activeContactId);
+                startPhysics();
             }
             cancelLinkMode();
         } else {
@@ -1407,6 +1597,7 @@
             const el = document.getElementById(`node-${space}-${activeNodeDrag.id}`);
             if(el) el.classList.remove('move-mode');
             activeNodeDrag = null;
+            if(space === 'canvas') startPhysics();
         }
     }
 
@@ -1493,6 +1684,7 @@
             broadcastToRoom(activeContactId, { type: 'delete_node', payload: { space: 'canvas', id, groupId: activeContactId } });
             broadcastToRoom(activeContactId, { type: 'delete_node', payload: { space: 'tree', id, groupId: activeContactId } });
         });
+        startPhysics();
     }
 
     function switchTreeRoot(id) {
@@ -1628,6 +1820,7 @@
             broadcastToRoom(activeContactId, { type: 'new_node', payload: { space: 'tree', node: treeNode, groupId: contact.isRoom ? activeContactId : undefined } });
 
             processEmotionAndTreeAI(text, activeContactId, id, passedReplyId);
+            startPhysics();
             
         } catch (error) {
             console.error("送信エラー:", error);
@@ -1756,7 +1949,6 @@
         const safeText = node.text ? node.text.replace(/\n/g, '<br>') : '';
         const displayText = ai.formattedText ? ai.formattedText.replace(/\n/g, '<br>') : safeText;
         
-        // --- ユーザーごとの色を適用 ---
         const userColor = node.isMine ? '#007aff' : getUserColor(node.senderId);
 
         if (space === 'tree') {
@@ -1787,7 +1979,6 @@
             if (node.isMine) el.classList.add('mine');
             if (!node.parentId) el.classList.add('root-node'); 
             
-            // ボーダーや影にユーザーの色を反映
             el.style.borderColor = `${userColor}80`; 
             el.style.boxShadow = `0 4px 15px ${userColor}1A`; 
             
@@ -1800,7 +1991,6 @@
             let handleHtml = node.isMine ? `<div class="action-handle move-handle" onpointerdown="startNodeDrag(event, '${node.id}', '${space}')">＋</div><div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div><div class="action-handle link-handle" onclick="startLinkMode(event, '${node.id}')">🔗</div>` : `<div class="action-handle del-handle" onclick="deleteNodeUI('${node.id}', '${space}', event)">×</div>`;
             let expandBtn = `<div class="action-handle expand-handle" onclick="toggleNodeExpand(event, '${node.id}', '${space}')">${isExpanded ? '▲' : '▼'}</div>`;
 
-            // ヘッダーにもユーザー色を反映
             let contentHtml = `<div class="node-header" onclick="toggleMoveMode(event, '${node.id}', '${space}')" style="background: ${userColor}1A; border-bottom: 1px solid ${userColor}33;"><img src="${senderIcon}" class="node-icon"><span style="color:${userColor};">${senderName}</span> <span class="node-time">${timeStr}</span></div>`;
             
             contentHtml += `<div class="node-body" onclick="handleCanvasNodeBodyClick(event, '${node.id}', '${senderName}')">`;
@@ -1850,6 +2040,7 @@
                 let senderName = connectionStatus[senderId]?.name || senderId;
                 showReplyToast(node, senderName);
             }
+            if (space === 'canvas') startPhysics();
         }
     }
 
@@ -1861,7 +2052,10 @@
             node.isMine = contact[`${space}Nodes`][idx].isMine; 
             contact[`${space}Nodes`][idx] = node;
             saveData();
-            if(activeContactId === targetContextId && currentTab === space) renderWorkspace(space);
+            if(activeContactId === targetContextId && currentTab === space) {
+                renderWorkspace(space);
+                if(space === 'canvas') startPhysics();
+            }
         }
     }
 
@@ -1880,7 +2074,10 @@
         saveData();
         
         if(activeContactId === targetContextId) {
-            if(space === 'canvas') refreshCanvasSummaryAI(targetContextId);
+            if(space === 'canvas') {
+                refreshCanvasSummaryAI(targetContextId);
+                startPhysics();
+            }
             renderWorkspace(currentTab);
         }
     }
@@ -2094,7 +2291,10 @@ ${texts.substring(0, 1500)}`;
             broadcastToRoom(targetContextId, { type: 'update_node', payload: { space: 'canvas', node: cNode, groupId: activeContactId } });
             broadcastToRoom(targetContextId, { type: 'update_node', payload: { space: 'tree', node: tNode, groupId: activeContactId } });
 
-            if(activeContactId === targetContextId) renderWorkspace(currentTab);
+            if(activeContactId === targetContextId) {
+                renderWorkspace(currentTab);
+                startPhysics(); // AIが親を紐付けた後にもう一度物理演算を回して整える
+            }
             
             refreshCanvasSummaryAI(targetContextId);
             const rId = getTreeRootId(nodeId, contact.treeNodes) || nodeId;
