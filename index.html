@@ -68,8 +68,9 @@
         }
         [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
+        
+        /* ミニマップをDOM方式に作り直したためのCSS変更 */
         .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
-        #canvas-minimap { position: absolute; top:0; left:0; opacity: 0.9; }
 
         #toast-container { position: absolute; right: 15px; top: 210px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         @keyframes popInToast { 0% { opacity: 0; transform: translateX(20px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
@@ -178,8 +179,9 @@
     <div class="ai-summary-panel" id="canvas-summary-panel" style="display:flex;">
         <h4>🧠 3行まとめ</h4>
         <div class="ai-summary-text" style="font-size:0.75rem; color:#555;">(会話が進むとAIが要約します)</div>
-        <div class="minimap-container">
-            <canvas id="canvas-minimap"></canvas>
+        <div class="minimap-container" id="minimap-container">
+            <div id="minimap-viewport" style="position: absolute; border: 1.5px solid rgba(0, 122, 255, 0.8); background: rgba(0, 122, 255, 0.1); box-sizing: border-box; transition: all 0.1s;"></div>
+            <div id="minimap-dots" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
         </div>
     </div>
 
@@ -1294,106 +1296,145 @@
         arrowAnimId = requestAnimationFrame(updateReplyArrowDirection);
     }
 
-    // --- ミニマップ表示ロジック ---
+    // --- ミニマップを完全にDOM方式に作り直した処理 ---
     function updateMinimap() {
         if (currentTab === 'canvas' && activeContactId && appData.contacts[activeContactId]) {
-            const canvas = document.getElementById('canvas-minimap');
-            const ctx = canvas.getContext('2d');
-            const parent = canvas.parentElement;
+            const container = document.getElementById('minimap-container');
+            const dotsContainer = document.getElementById('minimap-dots');
+            const vpEl = document.getElementById('minimap-viewport');
             
-            // 【修正点】小数のピクセルによる毎フレーム初期化を防ぐ
-            const pWidth = Math.floor(parent.clientWidth);
-            const pHeight = Math.floor(parent.clientHeight);
+            if(!container || !dotsContainer || !vpEl) {
+                minimapAnimationId = requestAnimationFrame(updateMinimap);
+                return;
+            }
             
-            if(pWidth > 0 && pHeight > 0) {
-                if (canvas.width !== pWidth) canvas.width = pWidth;
-                if (canvas.height !== pHeight) canvas.height = pHeight;
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            if (cw === 0 || ch === 0) {
+                minimapAnimationId = requestAnimationFrame(updateMinimap);
+                return;
             }
 
             const nodes = appData.contacts[activeContactId].canvasNodes || [];
-            if (nodes.length > 0 && canvas.width > 0 && canvas.height > 0) {
-                let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-                
-                nodes.forEach(n => {
-                    const nx = n.x || 0; const ny = n.y || 0;
-                    if(nx < minX) minX = nx; if(ny < minY) minY = ny;
-                    if(nx > maxX) maxX = nx; if(ny > maxY) maxY = ny;
-                });
-                
-                const now = Date.now();
-                Object.keys(userViewports).forEach(id => {
-                    const vp = userViewports[id];
-                    if (now - vp.time < 30000) { 
-                        if(vp.x < minX) minX = vp.x; if(vp.y < minY) minY = vp.y;
-                        if(vp.x > maxX) maxX = vp.x; if(vp.y > maxY) maxY = vp.y;
-                    }
-                });
-                
-                minX -= 300; minY -= 300; maxX += 500; maxY += 500;
-                
-                const w = maxX - minX; const h = maxY - minY;
-                const scaleX = canvas.width / w; const scaleY = canvas.height / h;
-                const scale = Math.min(scaleX, scaleY);
-                const ox = (canvas.width - w * scale) / 2;
-                const oy = (canvas.height - h * scale) / 2;
-
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-
-                // --- 1. ノードの点 ---
-                nodes.forEach(n => {
-                    const cx = ox + (n.x - minX) * scale;
-                    const cy = oy + (n.y - minY) * scale;
-                    ctx.beginPath();
-                    
-                    const unreadItem = unreadMessages.find(m => m.id === n.id && m.space === 'canvas');
-                    if (unreadItem) {
-                        ctx.arc(cx, cy, 6, 0, Math.PI*2);
-                        ctx.fillStyle = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50'; 
-                        ctx.fill();
-                    } else {
-                        ctx.arc(cx, cy, 4, 0, Math.PI*2);
-                        ctx.fillStyle = n.isMine ? '#007aff' : getUserColor(n.senderId);
-                        ctx.fill();
-                    }
-                });
-
-                // --- 2. 自分の見ている範囲(枠) ---
-                const cont = document.getElementById('canvas-workspace');
-                const vs = viewStates['canvas'];
-                const vpX = ox + (-vs.panX - minX) * scale;
-                const vpY = oy + (-vs.panY - minY) * scale;
-                const vpW = cont.offsetWidth * scale;
-                const vpH = cont.offsetHeight * scale;
-                
-                ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(vpX, vpY, vpW, vpH);
-                ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
-                ctx.fillRect(vpX, vpY, vpW, vpH);
-
-                // --- 3. 各ユーザーの所在ビーコン ---
-                Object.keys(userViewports).forEach(id => {
-                    const vp = userViewports[id];
-                    if (now - vp.time < 30000) {
-                        const cx = ox + (vp.x - minX) * scale;
-                        const cy = oy + (vp.y - minY) * scale;
-                        const color = id === appData.myP2pId ? '#007aff' : getUserColor(id);
-                        const name = id === appData.myP2pId ? appData.userName : (connectionStatus[id]?.name || id);
-                        
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, 6, 0, Math.PI*2);
-                        ctx.fillStyle = color;
-                        ctx.fill();
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.stroke();
-                        
-                        ctx.fillStyle = color;
-                        ctx.font = 'bold 11px sans-serif';
-                        ctx.fillText(name, cx + 10, cy + 4);
-                    }
-                });
+            
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let validNodesCount = 0;
+            
+            nodes.forEach(n => {
+                if(n.x !== undefined && n.y !== undefined) {
+                    if(n.x < minX) minX = n.x; if(n.y < minY) minY = n.y;
+                    if(n.x > maxX) maxX = n.x; if(n.y > maxY) maxY = n.y;
+                    validNodesCount++;
+                }
+            });
+            
+            if(validNodesCount === 0) {
+                const center = getCenterCoordinates('canvas');
+                minX = center.x - 500; minY = center.y - 500;
+                maxX = center.x + 500; maxY = center.y + 500;
             }
+            
+            const now = Date.now();
+            Object.keys(userViewports).forEach(id => {
+                const vp = userViewports[id];
+                if (now - vp.time < 30000) { 
+                    if(vp.x < minX) minX = vp.x; if(vp.y < minY) minY = vp.y;
+                    if(vp.x > maxX) maxX = vp.x; if(vp.y > maxY) maxY = vp.y;
+                }
+            });
+
+            // 余白
+            minX -= 400; minY -= 400; maxX += 400; maxY += 400;
+            
+            const w = maxX - minX; const h = maxY - minY;
+            const scaleX = cw / w; const scaleY = ch / h;
+            const scale = Math.min(scaleX, scaleY);
+            const ox = (cw - w * scale) / 2;
+            const oy = (ch - h * scale) / 2;
+
+            // --- 1. ノードの点の更新 ---
+            const existingDots = {};
+            Array.from(dotsContainer.children).forEach(el => existingDots[el.id] = el);
+
+            nodes.forEach(n => {
+                const dotId = `minimap-dot-${n.id}`;
+                let dot = existingDots[dotId];
+                if (!dot) {
+                    dot = document.createElement('div');
+                    dot.id = dotId;
+                    dot.style.position = 'absolute';
+                    dot.style.borderRadius = '50%';
+                    dot.style.transform = 'translate(-50%, -50%)';
+                    dot.style.transition = 'left 0.1s linear, top 0.1s linear';
+                    dotsContainer.appendChild(dot);
+                } else {
+                    delete existingDots[dotId];
+                }
+                
+                const cx = ox + ((n.x||0) - minX) * scale;
+                const cy = oy + ((n.y||0) - minY) * scale;
+                
+                dot.style.left = `${cx}px`;
+                dot.style.top = `${cy}px`;
+                
+                const unreadItem = unreadMessages.find(m => m.id === n.id && m.space === 'canvas');
+                if (unreadItem) {
+                    dot.style.width = '10px'; dot.style.height = '10px';
+                    dot.style.background = unreadItem.isReplyToMe ? '#ff3b30' : '#4CAF50';
+                    dot.style.zIndex = '10';
+                } else {
+                    dot.style.width = '6px'; dot.style.height = '6px';
+                    dot.style.background = n.isMine ? '#007aff' : getUserColor(n.senderId);
+                    dot.style.zIndex = '5';
+                }
+            });
+
+            // --- 2. 各ユーザーの所在ビーコンの更新 ---
+            Object.keys(userViewports).forEach(id => {
+                const vp = userViewports[id];
+                if (now - vp.time < 30000) {
+                    const dotId = `minimap-user-${id}`;
+                    let dot = existingDots[dotId];
+                    if (!dot) {
+                        dot = document.createElement('div');
+                        dot.id = dotId;
+                        dot.style.position = 'absolute';
+                        dot.style.transform = 'translate(-50%, -50%)';
+                        dot.style.transition = 'left 0.1s linear, top 0.1s linear';
+                        dot.style.zIndex = '20';
+                        dot.innerHTML = `<div style="width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-sizing:border-box;"></div><div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:bold; color:#333; white-space:nowrap; text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;"></div>`;
+                        dotsContainer.appendChild(dot);
+                    } else {
+                        delete existingDots[dotId];
+                    }
+                    
+                    const cx = ox + (vp.x - minX) * scale;
+                    const cy = oy + (vp.y - minY) * scale;
+                    const color = id === appData.myP2pId ? '#007aff' : getUserColor(id);
+                    const name = id === appData.myP2pId ? appData.userName : (connectionStatus[id]?.name || id);
+                    
+                    dot.style.left = `${cx}px`;
+                    dot.style.top = `${cy}px`;
+                    dot.children[0].style.backgroundColor = color;
+                    dot.children[1].innerText = name;
+                }
+            });
+
+            // 不要になった点を削除
+            Object.values(existingDots).forEach(el => el.remove());
+
+            // --- 3. 自分の見ている範囲(枠) ---
+            const cont = document.getElementById('canvas-workspace');
+            const vs = viewStates['canvas'];
+            const vpX = ox + (-vs.panX - minX) * scale;
+            const vpY = oy + (-vs.panY - minY) * scale;
+            const vpW = cont.offsetWidth * scale;
+            const vpH = cont.offsetHeight * scale;
+            
+            vpEl.style.left = `${vpX}px`;
+            vpEl.style.top = `${vpY}px`;
+            vpEl.style.width = `${vpW}px`;
+            vpEl.style.height = `${vpH}px`;
         }
         minimapAnimationId = requestAnimationFrame(updateMinimap);
     }
@@ -1421,10 +1462,10 @@
         let velocities = {};
         nodes.forEach(n => velocities[n.id] = {x: 0, y: 0});
 
-        // 調整パラメータ：スマホで見やすいようにさらに密集させる
-        const repelStrength = 10000; // 反発力を弱める
-        const springLen = 90;        // ケーブルの基本の長さを短く
-        const springK = 0.08;        // 引き寄せる力を少し強く
+        // パラメータ調整：ノードをさらに近づけて密集させる
+        const repelStrength = 30000; // 反発力を弱く
+        const springLen = 120;       // バネ（ケーブル）の長さをさらに短く
+        const springK = 0.06;        // バネの引き合う力を少し強く
 
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
@@ -1432,7 +1473,7 @@
                 let dx = (n1.x||0) - (n2.x||0); let dy = (n1.y||0) - (n2.y||0);
                 let distSq = dx*dx + dy*dy;
                 if(distSq === 0) { dx = Math.random(); dy = Math.random(); distSq = dx*dx+dy*dy; }
-                if (distSq < 40000) { // 近すぎる場合のみ反発(200px未満)
+                if (distSq < 100000) { 
                     const dist = Math.sqrt(distSq);
                     const force = repelStrength / distSq;
                     velocities[n1.id].x += (dx/dist)*force; velocities[n1.id].y += (dy/dist)*force;
@@ -1476,7 +1517,7 @@
                         let dx = p0.x - projX; let dy = p0.y - projY;
                         let dist = Math.hypot(dx, dy);
                         
-                        const minDist = 70; // ノードとケーブルの回避距離も短く
+                        const minDist = 100; // ケーブルとノードの許容距離
                         if (dist < minDist && dist > 0) {
                             const force = (minDist - dist) * 0.15;
                             velocities[n.id].x += (dx/dist)*force; velocities[n.id].y += (dy/dist)*force;
@@ -1704,7 +1745,7 @@
         const parent = contactNodes.find(n => n.id === parentId);
         if(!parent) return {x: 0, y: 0};
         
-        let radius = 90; // 初期配置から近くする
+        let radius = 120; 
         let angle = Math.random() * Math.PI * 2;
         let px = parent.x + Math.cos(angle) * radius;
         let py = parent.y + Math.sin(angle) * radius;
@@ -1712,7 +1753,7 @@
         for(let i=0; i<15; i++) {
             let collision = false;
             for(let n of contactNodes) {
-                if(n.id !== parentId && Math.hypot((n.x||0) - px, (n.y||0) - py) < 80) { // 判定を狭く
+                if(n.id !== parentId && Math.hypot((n.x||0) - px, (n.y||0) - py) < 100) { 
                     collision = true; break;
                 }
             }
@@ -1761,9 +1802,9 @@
             if (!contact.treeNodes) contact.treeNodes = [];
 
             const id = Date.now().toString();
+            
+            // --- 【重要】孤立防止処理：返信指定がない場合、直前のノードを仮の親にする ---
             let passedReplyId = replyTargetId;
-
-            // ★追加：明示的な返信先がない場合、フロントエンド側で強制的に最後の発言を親に設定し、孤立を防ぐ
             if (!passedReplyId && contact.canvasNodes.length > 0) {
                 passedReplyId = contact.canvasNodes[contact.canvasNodes.length - 1].id;
             }
@@ -1781,7 +1822,7 @@
                 for(let i=0; i<30; i++) {
                     let collision = false;
                     for(let n of contact.canvasNodes) {
-                        if(Math.hypot((n.x||0) - cx, (n.y||0) - cy) < 80) { // 判定を狭く
+                        if(Math.hypot((n.x||0) - cx, (n.y||0) - cy) < 120) { 
                             collision = true; break;
                         }
                     }
@@ -2236,8 +2277,8 @@ ${texts.substring(0, 1500)}`;
 また、新しい発言が過去の履歴と文脈的にどう繋がるかを判断し、「parentId」を決定してください。
 
 【自動リンク（parentId）判定のルール（厳守）】
-履歴の中で最も適切な発言の「id」を parentId として指定し、ケーブルを繋げてください。直前の発言である必要はなく、一番文脈が合うものを選択してください。
-※孤立を防ぐため、parentId に null を指定することは絶対に禁止します。必ず何かの id を指定してください。
+1. 最新の発言は、必ず過去の履歴のいずれかの発言と関連付け、「id」を parentId として指定し、ケーブルを繋げてください。話題が飛んだように見えても、最も近いニュアンスや時系列のノードを必ず親として選んでください。
+2. 絶対に parentId を null にしないでください。必ずどこかのノードに繋ぎます。（最初の発言を除く）
 
 【感情・ニュアンスごとのデザインルール（厳守）】
 ・喜び/楽しい/笑い: fontSizeは "1.2rem"〜"1.5rem", fontWeightは "900", fontFamilyは "M PLUS Rounded 1c" または "Yusei Magic", colorは "#ff4081" や "#ff9800"。
@@ -2267,25 +2308,27 @@ ${texts.substring(0, 1500)}`;
             
             const aiParentId = updateData.parentId;
             
+            // 【重要】AIがもしnullを返してきても、強制的に直前のノードに繋ぐフォールバック
+            let finalParentId = userAssignedParentId;
+            if (finalParentId === null || finalParentId === undefined) {
+                if (!aiParentId && contact.canvasNodes.length > 1) {
+                    const otherNodes = contact.canvasNodes.filter(n => n.id !== nodeId);
+                    finalParentId = otherNodes[otherNodes.length - 1].id;
+                } else {
+                    finalParentId = aiParentId;
+                }
+            }
+            
             const cNode = contact.canvasNodes.find(n => n.id === nodeId);
             if(cNode) {
                 cNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, fontSize: updateData.fontSize, fontWeight: updateData.fontWeight, formattedText: updateData.formattedText };
-                if (userAssignedParentId === null || userAssignedParentId === undefined) {
-                    // AIがnullを返してきた場合のフェールセーフ
-                    cNode.parentId = aiParentId || cNode.parentId; 
-                } else {
-                    cNode.parentId = userAssignedParentId;
-                }
+                cNode.parentId = finalParentId;
             }
 
             const tNode = contact.treeNodes.find(n => n.id === nodeId);
             if(tNode) {
                 tNode.aiData = { fontFamily: updateData.fontFamily, color: updateData.color, fontSize: updateData.fontSize, fontWeight: updateData.fontWeight, formattedText: updateData.formattedText };
-                if (userAssignedParentId === null || userAssignedParentId === undefined) {
-                    tNode.parentId = aiParentId || tNode.parentId;
-                } else {
-                    tNode.parentId = userAssignedParentId;
-                }
+                tNode.parentId = finalParentId;
             }
             saveData();
 
@@ -2294,7 +2337,7 @@ ${texts.substring(0, 1500)}`;
 
             if(activeContactId === targetContextId) {
                 renderWorkspace(currentTab);
-                startPhysics(); 
+                startPhysics(); // AIが親を紐付けた後にもう一度物理演算を回して引き寄せる
             }
             
             refreshCanvasSummaryAI(targetContextId);
