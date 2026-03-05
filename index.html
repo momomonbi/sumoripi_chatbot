@@ -69,7 +69,6 @@
         [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
         
-        /* ミニマップをDOM方式に作り直したためのCSS変更 */
         .minimap-container { position: relative; width: 100%; height: 120px; border-radius: 8px; background: rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(128,128,128,0.2); }
 
         #toast-container { position: absolute; right: 15px; top: 210px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
@@ -135,7 +134,13 @@
 <div class="header-area">
     <div class="app-header">
         <h1 id="app-title-display">Node Canvas Chat</h1>
-        <div style="display: flex; gap: 6px;">
+        <div style="display: flex; gap: 6px; align-items: center;">
+            <select id="spacing-selector" onchange="changeNodeSpacing(this.value)" style="display:none; padding:6px 8px; background:rgba(255,255,255,0.9); border-radius:10px; border:1px solid rgba(0,122,255,0.4); color:var(--accent-color); font-weight:bold; outline:none; font-size:0.75rem;">
+                <option value="compact">間隔: 狭い</option>
+                <option value="normal" selected>間隔: 普通</option>
+                <option value="wide">間隔: 広い</option>
+            </select>
+            
             <button id="btn-export-canvas" onclick="exportCanvasAsImage()" style="display:none; padding:8px 12px; background:rgba(0,122,255,0.1); color:#007aff; border-radius:10px; font-weight:bold;">📷 保存</button>
             <button id="btn-manage-tree" onclick="openTreeManageModal()" style="display:none; padding:8px 12px; background:rgba(255,152,0,0.1); color:#ff9800; border-radius:10px; font-weight:bold;">🌳 ツリー切替</button>
             <button id="btn-clear-canvas" onclick="clearCanvas()" style="display:none; padding:8px 12px; background:rgba(244,67,54,0.1); color:#f44336; border-radius:10px; font-weight:bold;">🧹 消去</button>
@@ -469,7 +474,26 @@
         
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
         renderUnreadBadges();
+        
+        // --- 設定セレクタの表示切り替え ---
+        const spacingSelect = document.getElementById('spacing-selector');
+        if (currentTab === 'canvas' && activeContactId) {
+            spacingSelect.style.display = 'block';
+            spacingSelect.value = appData.contacts[activeContactId].nodeSpacing || 'normal';
+        } else {
+            spacingSelect.style.display = 'none';
+        }
+        
         if(currentTab === 'canvas') sendViewportUpdate();
+    }
+
+    // --- ノード間隔の変更と同期 ---
+    function changeNodeSpacing(val) {
+        if (!activeContactId) return;
+        appData.contacts[activeContactId].nodeSpacing = val;
+        saveData();
+        broadcastToRoom(activeContactId, { type: 'update_spacing', payload: { spacing: val, groupId: activeContactId } });
+        startPhysics();
     }
 
     function handleCanvasTabClick(tabEl) {
@@ -538,6 +562,8 @@
 
     function updateTabUI() {
         const tabBtn = document.getElementById('tab-btn-canvas');
+        const spacingSelect = document.getElementById('spacing-selector');
+        
         if(activeContactId && appData.contacts[activeContactId]) {
             const contact = appData.contacts[activeContactId];
             
@@ -562,11 +588,16 @@
             document.getElementById('btn-export-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
             
-            if(currentTab === 'canvas') {
+            if (currentTab === 'canvas') {
+                spacingSelect.style.display = 'block';
+                spacingSelect.value = contact.nodeSpacing || 'normal';
                 updateSummaryPanel(contact.canvasSummary, 'canvas');
-            } else if (currentTab === 'tree') {
-                const rNode = activeTreeRootId ? contact.treeNodes.find(n => n.id === activeTreeRootId) : null;
-                updateSummaryPanel(rNode ? rNode.treeSummary : "", 'tree');
+            } else {
+                spacingSelect.style.display = 'none';
+                if (currentTab === 'tree') {
+                    const rNode = activeTreeRootId ? contact.treeNodes.find(n => n.id === activeTreeRootId) : null;
+                    updateSummaryPanel(rNode ? rNode.treeSummary : "", 'tree');
+                }
             }
         } else {
             tabBtn.innerHTML = "🎨 キャンバス"; 
@@ -574,6 +605,7 @@
             document.getElementById('btn-clear-canvas').style.display = 'none';
             document.getElementById('btn-export-canvas').style.display = 'none';
             document.getElementById('btn-manage-tree').style.display = 'none';
+            spacingSelect.style.display = 'none';
             document.querySelectorAll('.ai-summary-panel').forEach(el => el.style.display = 'none');
         }
         setTimeout(() => { if(tabBtn.classList.contains('active')) document.getElementById('tab-highlight').style.width = tabBtn.offsetWidth + 'px'; }, 50);
@@ -801,7 +833,7 @@
                 isRoom: true, 
                 name: roomName || "グループチャット", 
                 members: members, 
-                canvasNodes: [], treeNodes: [] 
+                canvasNodes: [], treeNodes: [], nodeSpacing: 'normal' 
             };
             saveData();
             openContactHistory(roomId);
@@ -825,7 +857,7 @@
         
         const contact = appData.contacts[targetId];
         if(!contact) { 
-            appData.contacts[targetId] = { isRoom: false, name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [] }; 
+            appData.contacts[targetId] = { isRoom: false, name: "ID:"+targetId, icon: "", canvasNodes: [], treeNodes: [], nodeSpacing: 'normal' }; 
             saveData(); 
         }
         
@@ -855,7 +887,7 @@
         if(conn && conn.open) {
             const myCanvasKeys = (contact.canvasNodes || []).map(n => ({ id: n.id }));
             const myTreeKeys = (contact.treeNodes || []).map(n => ({ id: n.id }));
-            conn.send({ type: 'sync_check', payload: { contextId, canvas: myCanvasKeys, tree: myTreeKeys } });
+            conn.send({ type: 'sync_check', payload: { contextId, canvas: myCanvasKeys, tree: myTreeKeys, nodeSpacing: contact.nodeSpacing } });
         }
     }
 
@@ -919,7 +951,7 @@
                 const myMembers = members.filter(m => m !== appData.myP2pId);
                 
                 if (!appData.contacts[roomId]) {
-                    appData.contacts[roomId] = { isRoom: true, name: roomName || "招待されたルーム", members: myMembers, canvasNodes: [], treeNodes: [] };
+                    appData.contacts[roomId] = { isRoom: true, name: roomName || "招待されたルーム", members: myMembers, canvasNodes: [], treeNodes: [], nodeSpacing: 'normal' };
                     saveData();
                     openContactHistory(roomId);
                 } else {
@@ -930,11 +962,24 @@
             else if (data.type === 'viewport') {
                 userViewports[peerId] = { x: data.payload.x, y: data.payload.y, time: Date.now() };
             }
+            // --- 間隔設定の同期受信 ---
+            else if (data.type === 'update_spacing') {
+                const targetContextId = data.payload.groupId || peerId;
+                if (appData.contacts[targetContextId]) {
+                    appData.contacts[targetContextId].nodeSpacing = data.payload.spacing;
+                    saveData();
+                    if (activeContactId === targetContextId && currentTab === 'canvas') {
+                        const select = document.getElementById('spacing-selector');
+                        if (select) select.value = data.payload.spacing;
+                        startPhysics();
+                    }
+                }
+            }
             else if (data.type === 'new_node' || data.type === 'update_node' || data.type === 'delete_node' || data.type === 'clear_canvas' || data.type === 'update_summary' || data.type === 'toggle_collapse') {
                 const targetContextId = data.payload.groupId || peerId;
                 
                 if (data.payload.groupId && !appData.contacts[data.payload.groupId]) {
-                    appData.contacts[data.payload.groupId] = { isRoom: true, name: "招待されたルーム", members: [peerId], canvasNodes: [], treeNodes: [] };
+                    appData.contacts[data.payload.groupId] = { isRoom: true, name: "招待されたルーム", members: [peerId], canvasNodes: [], treeNodes: [], nodeSpacing: 'normal' };
                 }
 
                 if (data.type === 'new_node') handleReceivedNode(targetContextId, data.payload, peerId);
@@ -966,6 +1011,13 @@
                 const contextId = data.payload.contextId;
                 const contact = appData.contacts[contextId];
                 if (!contact) return;
+                
+                // 間隔設定の同期
+                if (data.payload.nodeSpacing && !contact.nodeSpacing) {
+                    contact.nodeSpacing = data.payload.nodeSpacing;
+                    saveData();
+                    if(activeContactId === contextId) updateTabUI();
+                }
                 
                 const theirCanvasIds = (data.payload.canvas || []).map(k => k.id);
                 const theirTreeIds = (data.payload.tree || []).map(k => k.id);
@@ -1296,7 +1348,7 @@
         arrowAnimId = requestAnimationFrame(updateReplyArrowDirection);
     }
 
-    // --- ミニマップを完全にDOM方式に作り直した処理 ---
+    // --- ミニマップ（DOM方式に完全リニューアル） ---
     function updateMinimap() {
         if (currentTab === 'canvas' && activeContactId && appData.contacts[activeContactId]) {
             const container = document.getElementById('minimap-container');
@@ -1343,7 +1395,6 @@
                 }
             });
 
-            // 余白
             minX -= 400; minY -= 400; maxX += 400; maxY += 400;
             
             const w = maxX - minX; const h = maxY - minY;
@@ -1352,10 +1403,10 @@
             const ox = (cw - w * scale) / 2;
             const oy = (ch - h * scale) / 2;
 
-            // --- 1. ノードの点の更新 ---
             const existingDots = {};
             Array.from(dotsContainer.children).forEach(el => existingDots[el.id] = el);
 
+            // 1. ノードの点
             nodes.forEach(n => {
                 const dotId = `minimap-dot-${n.id}`;
                 let dot = existingDots[dotId];
@@ -1389,7 +1440,7 @@
                 }
             });
 
-            // --- 2. 各ユーザーの所在ビーコンの更新 ---
+            // 2. ユーザーの現在地
             Object.keys(userViewports).forEach(id => {
                 const vp = userViewports[id];
                 if (now - vp.time < 30000) {
@@ -1420,10 +1471,10 @@
                 }
             });
 
-            // 不要になった点を削除
+            // 消えたものを削除
             Object.values(existingDots).forEach(el => el.remove());
 
-            // --- 3. 自分の見ている範囲(枠) ---
+            // 3. 自分の見ている範囲
             const cont = document.getElementById('canvas-workspace');
             const vs = viewStates['canvas'];
             const vpX = ox + (-vs.panX - minX) * scale;
@@ -1439,7 +1490,7 @@
         minimapAnimationId = requestAnimationFrame(updateMinimap);
     }
 
-    // --- フォースレイアウト（物理演算）---
+    // --- フォースレイアウト（設定対応＆絶対反発力） ---
     function startPhysics() {
         if (!physicsActive) {
             physicsActive = true;
@@ -1462,20 +1513,35 @@
         let velocities = {};
         nodes.forEach(n => velocities[n.id] = {x: 0, y: 0});
 
-        // パラメータ調整：ノードをさらに近づけて密集させる
-        const repelStrength = 30000; // 反発力を弱く
-        const springLen = 120;       // バネ（ケーブル）の長さをさらに短く
-        const springK = 0.06;        // バネの引き合う力を少し強く
+        // 設定の読み込み
+        const spacingType = appData.contacts[activeContactId].nodeSpacing || 'normal';
+        let springLen, repelDist, repelStrength, edgeRepelDist, collisionDist;
+        
+        if (spacingType === 'compact') { 
+            springLen = 200; repelDist = 300; repelStrength = 80000; edgeRepelDist = 140; collisionDist = 220;
+        } else if (spacingType === 'wide') { 
+            springLen = 500; repelDist = 600; repelStrength = 200000; edgeRepelDist = 250; collisionDist = 300;
+        } else { 
+            // normal
+            springLen = 320; repelDist = 400; repelStrength = 120000; edgeRepelDist = 180; collisionDist = 250;
+        }
+        
+        const springK = 0.05;
 
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
                 const n1 = nodes[i]; const n2 = nodes[j];
                 let dx = (n1.x||0) - (n2.x||0); let dy = (n1.y||0) - (n2.y||0);
-                let distSq = dx*dx + dy*dy;
-                if(distSq === 0) { dx = Math.random(); dy = Math.random(); distSq = dx*dx+dy*dy; }
-                if (distSq < 100000) { 
-                    const dist = Math.sqrt(distSq);
-                    const force = repelStrength / distSq;
+                let dist = Math.hypot(dx, dy);
+                if (dist === 0) { dx = Math.random(); dy = Math.random(); dist = Math.hypot(dx, dy); }
+                
+                // 絶対に重ならないための強力なコリジョン（衝突）反発
+                if (dist < collisionDist) {
+                    const force = (collisionDist - dist) * 0.4; 
+                    velocities[n1.id].x += (dx/dist)*force; velocities[n1.id].y += (dy/dist)*force;
+                    velocities[n2.id].x -= (dx/dist)*force; velocities[n2.id].y -= (dy/dist)*force;
+                } else if (dist < repelDist) {
+                    const force = repelStrength / (dist * dist);
                     velocities[n1.id].x += (dx/dist)*force; velocities[n1.id].y += (dy/dist)*force;
                     velocities[n2.id].x -= (dx/dist)*force; velocities[n2.id].y -= (dy/dist)*force;
                 }
@@ -1497,7 +1563,7 @@
             }
         });
 
-        // ケーブルがノードの下敷きになるのを防ぐ
+        // ケーブル下敷き防止
         nodes.forEach(n => {
             nodes.forEach(edgeNode => {
                 if (edgeNode.parentId && edgeNode.id !== n.id && edgeNode.parentId !== n.id) {
@@ -1517,9 +1583,8 @@
                         let dx = p0.x - projX; let dy = p0.y - projY;
                         let dist = Math.hypot(dx, dy);
                         
-                        const minDist = 100; // ケーブルとノードの許容距離
-                        if (dist < minDist && dist > 0) {
-                            const force = (minDist - dist) * 0.15;
+                        if (dist < edgeRepelDist && dist > 0) {
+                            const force = (edgeRepelDist - dist) * 0.15;
                             velocities[n.id].x += (dx/dist)*force; velocities[n.id].y += (dy/dist)*force;
                         }
                     }
@@ -1745,7 +1810,8 @@
         const parent = contactNodes.find(n => n.id === parentId);
         if(!parent) return {x: 0, y: 0};
         
-        let radius = 120; 
+        const spacingType = appData.contacts[activeContactId]?.nodeSpacing || 'normal';
+        let radius = spacingType === 'compact' ? 180 : (spacingType === 'wide' ? 400 : 280);
         let angle = Math.random() * Math.PI * 2;
         let px = parent.x + Math.cos(angle) * radius;
         let py = parent.y + Math.sin(angle) * radius;
@@ -1753,7 +1819,7 @@
         for(let i=0; i<15; i++) {
             let collision = false;
             for(let n of contactNodes) {
-                if(n.id !== parentId && Math.hypot((n.x||0) - px, (n.y||0) - py) < 100) { 
+                if(n.id !== parentId && Math.hypot((n.x||0) - px, (n.y||0) - py) < 150) { 
                     collision = true; break;
                 }
             }
@@ -1803,7 +1869,6 @@
 
             const id = Date.now().toString();
             
-            // --- 【重要】孤立防止処理：返信指定がない場合、直前のノードを仮の親にする ---
             let passedReplyId = replyTargetId;
             if (!passedReplyId && contact.canvasNodes.length > 0) {
                 passedReplyId = contact.canvasNodes[contact.canvasNodes.length - 1].id;
@@ -1822,7 +1887,7 @@
                 for(let i=0; i<30; i++) {
                     let collision = false;
                     for(let n of contact.canvasNodes) {
-                        if(Math.hypot((n.x||0) - cx, (n.y||0) - cy) < 120) { 
+                        if(Math.hypot((n.x||0) - cx, (n.y||0) - cy) < 180) { 
                             collision = true; break;
                         }
                     }
@@ -2308,7 +2373,6 @@ ${texts.substring(0, 1500)}`;
             
             const aiParentId = updateData.parentId;
             
-            // 【重要】AIがもしnullを返してきても、強制的に直前のノードに繋ぐフォールバック
             let finalParentId = userAssignedParentId;
             if (finalParentId === null || finalParentId === undefined) {
                 if (!aiParentId && contact.canvasNodes.length > 1) {
@@ -2337,7 +2401,7 @@ ${texts.substring(0, 1500)}`;
 
             if(activeContactId === targetContextId) {
                 renderWorkspace(currentTab);
-                startPhysics(); // AIが親を紐付けた後にもう一度物理演算を回して引き寄せる
+                startPhysics(); 
             }
             
             refreshCanvasSummaryAI(targetContextId);
