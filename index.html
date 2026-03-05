@@ -60,9 +60,9 @@
         [data-theme="dark"] .ai-summary-panel { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
         .ai-summary-panel h4 { margin: 0; color: var(--accent-color); font-size: 0.8rem; border-bottom: 2px dashed rgba(0, 122, 255, 0.3); padding-bottom: 4px; }
         
-        /* 完全に見直したCanvas方式ミニマップコンテナ */
-        #canvas-minimap-container { width: 100%; height: 140px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(128,128,128,0.4); box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; pointer-events: auto; display: none; position: relative; cursor: pointer; }
-        [data-theme="dark"] #canvas-minimap-container { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
+        /* ミニマップを廃止し、ズームコントローラーを設置 */
+        #zoom-controls-container { width: 100%; display: none; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); padding: 10px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.4); box-shadow: 0 4px 15px rgba(0,0,0,0.1); pointer-events: auto; box-sizing: border-box; }
+        [data-theme="dark"] #zoom-controls-container { background: rgba(30, 30, 30, 0.85); border-color: rgba(255,255,255,0.1); }
 
         #toast-container { width: 100%; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         @keyframes popInToast { 0% { opacity: 0; transform: translateX(20px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
@@ -70,7 +70,7 @@
         .nav-notification { display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #ff9800; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 20px rgba(255,152,0,0.4); cursor: pointer; animation: bounceIn 0.5s; }
         @keyframes bounceIn { 0% { opacity:0; transform: scale(0.5); } 100% { opacity:1; transform: scale(1); } }
         
-        .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 140px; max-width: 320px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; }
+        .chat-node { position: absolute; background: var(--card-bg); border-radius: 20px; padding: 0 0 12px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; min-width: 140px; max-width: 320px; user-select: none; transition: box-shadow 0.2s, border 0.2s; z-index: 10; display: flex; flex-direction: column; backdrop-filter: blur(10px); touch-action: none; transform-origin: top left; }
         .chat-node:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100 !important; }
         .chat-node.root-node { border: 3px solid #ff9800 !important; box-shadow: 0 0 20px rgba(255, 152, 0, 0.3) !important; }
         .chat-node.move-mode { border: 2px dashed var(--accent-color) !important; z-index: 200 !important; }
@@ -93,14 +93,16 @@
         .text-collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .text-full { display: block; }
 
-        .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; }
+        .tree-node { position: absolute; background: transparent; padding: 0; min-width: 150px; max-width: 300px; user-select: none; z-index: 10; display: flex; flex-direction: column; touch-action: none; transition: left 0.3s ease, top 0.3s ease; transform-origin: top left; }
         .tree-node-content { display: inline-block; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); border-left: 4px solid var(--accent-color); padding: 10px 14px; border-radius: 12px; cursor: pointer; pointer-events: auto; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
         .tree-node-text { font-size: 0.9rem; font-weight: bold; color: var(--text-color); line-height: 1.4; word-break: break-word; transition: font-size 0.3s; }
         
-        .tree-controls { display: flex; gap: 4px; position: absolute; right: -40px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        /* ツリーの返信ボタンを大きく・押しやすく改善 */
+        .tree-controls { display: flex; gap: 4px; position: absolute; right: -50px; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .tree-node:hover .tree-controls { opacity: 1; pointer-events: auto; }
-        .tree-btn { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tree-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; background: var(--card-bg); border: 1px solid rgba(128,128,128,0.3); color: var(--text-color); box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.1s, background 0.1s; }
+        .tree-btn:active { transform: scale(0.9); background: rgba(0,122,255,0.1); }
 
         .linking-indicator { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #9c27b0; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); }
 
@@ -173,8 +175,13 @@
         <div class="ai-summary-text" style="font-size:0.75rem; color:#555;">(会話が進むとAIが要約します)</div>
     </div>
 
-    <div id="canvas-minimap-container">
-        <canvas id="minimap-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+    <div id="zoom-controls-container">
+        <div style="font-size:0.75rem; font-weight:bold; color:var(--accent-color); text-align:center; margin-bottom:4px;">🔍 ズーム</div>
+        <div style="display:flex; justify-content:space-between; gap:6px;">
+            <button onclick="handleZoom('out')" style="flex:1; padding:8px 0; font-size:1.4rem; font-weight:bold; background:rgba(0,0,0,0.05); color:var(--text-color); border-radius:8px;">－</button>
+            <button onclick="handleZoom('reset')" style="padding:8px 10px; font-size:0.9rem; font-weight:bold; background:rgba(0,0,0,0.05); color:var(--text-color); border-radius:8px;">100%</button>
+            <button onclick="handleZoom('in')" style="flex:1; padding:8px 0; font-size:1.4rem; font-weight:bold; background:rgba(0,0,0,0.05); color:var(--text-color); border-radius:8px;">＋</button>
+        </div>
     </div>
 
     <div id="toast-container"></div>
@@ -336,7 +343,7 @@
     let appData = { 
         theme: 'default', userName: 'ゲスト', userIcon: '', openAiKey: '',
         bgImage: '', bgOpacity: 0.2,
-        myP2pId: '', contacts: {}, minimapTransform: null
+        myP2pId: '', contacts: {}
     };
     
     let activeConnections = {}; 
@@ -345,8 +352,7 @@
     let activeTreeRootId = null; 
     let currentAttachedFile = null; 
     let arrowAnimId = null;
-    let minimapAnimId = null;
-    let minimapIsDragging = false;
+    let currentTab = 'canvas';
     
     let heartbeatTimer = null;
     let connectionStatus = {};
@@ -360,8 +366,8 @@
     let activeNodeDrag = null;
 
     const viewStates = {
-        canvas: { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
-        tree:   { scale: 1, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
+        canvas: { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
+        tree:   { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
     };
 
     function formatTime(ts) {
@@ -434,10 +440,6 @@
         initP2P();
         initWorkspaces();
         startHeartbeat(); 
-        
-        // Canvasベースの高性能ミニマップ初期化
-        initMinimapEvents();
-        startMinimapLoop();
 
         const activeTab = document.querySelector('.tab.active');
         if(activeTab) {
@@ -471,10 +473,23 @@
         renderUnreadBadges();
         
         const spacingSelect = document.getElementById('spacing-selector');
-        if (currentTab === 'canvas' && activeContactId) {
-            spacingSelect.style.display = 'block';
-            spacingSelect.value = appData.contacts[activeContactId].nodeSpacing || 'normal';
+        const zoomCtrl = document.getElementById('zoom-controls-container');
+        
+        if (activeContactId) {
+            if (currentTab === 'canvas' || currentTab === 'tree') {
+                zoomCtrl.style.display = 'flex';
+            } else {
+                zoomCtrl.style.display = 'none';
+            }
+            
+            if (currentTab === 'canvas') {
+                spacingSelect.style.display = 'block';
+                spacingSelect.value = appData.contacts[activeContactId].nodeSpacing || 'normal';
+            } else {
+                spacingSelect.style.display = 'none';
+            }
         } else {
+            zoomCtrl.style.display = 'none';
             spacingSelect.style.display = 'none';
         }
         
@@ -566,6 +581,7 @@
     function updateTabUI() {
         const tabBtn = document.getElementById('tab-btn-canvas');
         const spacingSelect = document.getElementById('spacing-selector');
+        const zoomCtrl = document.getElementById('zoom-controls-container');
         
         if(activeContactId && appData.contacts[activeContactId]) {
             const contact = appData.contacts[activeContactId];
@@ -591,6 +607,12 @@
             document.getElementById('btn-export-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
             
+            if (currentTab === 'canvas' || currentTab === 'tree') {
+                zoomCtrl.style.display = 'flex';
+            } else {
+                zoomCtrl.style.display = 'none';
+            }
+
             if (currentTab === 'canvas') {
                 spacingSelect.style.display = 'block';
                 spacingSelect.value = contact.nodeSpacing || 'normal';
@@ -609,6 +631,7 @@
             document.getElementById('btn-export-canvas').style.display = 'none';
             document.getElementById('btn-manage-tree').style.display = 'none';
             spacingSelect.style.display = 'none';
+            zoomCtrl.style.display = 'none';
             document.getElementById('canvas-summary-panel').style.display = 'none';
             document.getElementById('tree-summary-panel').style.display = 'none';
         }
@@ -1130,6 +1153,31 @@
         input.value = ""; 
     }
 
+    // --- ズームコントロール ---
+    function handleZoom(direction) {
+        if (currentTab !== 'canvas' && currentTab !== 'tree') return;
+        const vs = viewStates[currentTab];
+        const oldScale = vs.scale || 1.0;
+        const zoomStep = 0.2;
+        
+        if (direction === 'in') vs.scale = Math.min(oldScale + zoomStep, 3.0);
+        else if (direction === 'out') vs.scale = Math.max(oldScale - zoomStep, 0.2);
+        else if (direction === 'reset') vs.scale = 1.0;
+        
+        const cont = document.getElementById(`${currentTab}-workspace`);
+        const centerX = cont.offsetWidth / 2;
+        const centerY = cont.offsetHeight / 2;
+        
+        const worldX = (centerX - vs.panX) / oldScale;
+        const worldY = (centerY - vs.panY) / oldScale;
+        
+        vs.panX = centerX - worldX * vs.scale;
+        vs.panY = centerY - worldY * vs.scale;
+        
+        updateWorkspaceTransform(currentTab);
+        if (currentTab === 'canvas') sendViewportUpdate();
+    }
+
     // --- ワークスペース ---
     function initWorkspaces() {
         ['canvas', 'tree'].forEach(space => {
@@ -1177,30 +1225,39 @@
         
         const cont = document.getElementById('canvas-workspace');
         const vs = viewStates['canvas'];
-        const centerX = (cont.offsetWidth / 2) - vs.panX;
-        const centerY = (cont.offsetHeight / 2) - vs.panY;
+        const scale = vs.scale || 1.0;
+        const centerX = (cont.offsetWidth / 2 - vs.panX) / scale;
+        const centerY = (cont.offsetHeight / 2 - vs.panY) / scale;
         
         userViewports[appData.myP2pId] = { x: centerX, y: centerY, time: now };
         broadcastToRoom(activeContactId, { type: 'viewport', payload: { x: centerX, y: centerY } });
     }
 
     function resetWorkspaceView() {
+        if (currentTab !== 'canvas' && currentTab !== 'tree') return;
         const cont = document.getElementById(`${currentTab}-workspace`);
-        viewStates[currentTab].panX = -4000 + (cont.offsetWidth / 2);
-        viewStates[currentTab].panY = -4000 + (cont.offsetHeight / 2);
+        const vs = viewStates[currentTab];
+        vs.scale = 1.0;
+        vs.panX = -4000 + (cont.offsetWidth / 2);
+        vs.panY = -4000 + (cont.offsetHeight / 2);
         updateWorkspaceTransform(currentTab);
         if (currentTab === 'canvas') sendViewportUpdate();
     }
 
     function updateWorkspaceTransform(space) {
         const layer = document.getElementById(`${space}-layer`);
-        if(layer) layer.style.transform = `translate(${viewStates[space].panX}px, ${viewStates[space].panY}px)`;
+        const scale = viewStates[space].scale || 1.0;
+        if(layer) layer.style.transform = `translate(${viewStates[space].panX}px, ${viewStates[space].panY}px) scale(${scale})`;
     }
 
     function getCenterCoordinates(space) {
         const cont = document.getElementById(`${space}-workspace`);
         const vs = viewStates[space];
-        return { x: (cont.offsetWidth / 2) - vs.panX, y: (cont.offsetHeight / 2) - vs.panY };
+        const scale = vs.scale || 1.0;
+        return { 
+            x: (cont.offsetWidth / 2 - vs.panX) / scale, 
+            y: (cont.offsetHeight / 2 - vs.panY) / scale 
+        };
     }
 
     // --- 新着未読・ナビゲーション・トースト ---
@@ -1312,8 +1369,9 @@
 
         const cont = document.getElementById(`${currentTab}-workspace`);
         const vs = viewStates[currentTab];
-        vs.panX = (cont.offsetWidth / 2) - targetX;
-        vs.panY = (cont.offsetHeight / 2) - targetY;
+        const scale = vs.scale || 1.0;
+        vs.panX = (cont.offsetWidth / 2) - targetX * scale;
+        vs.panY = (cont.offsetHeight / 2) - targetY * scale;
         updateWorkspaceTransform(currentTab);
         if (currentTab === 'canvas') sendViewportUpdate();
     }
@@ -1334,8 +1392,9 @@
 
         const cont = document.getElementById(`${currentTab}-workspace`);
         const vs = viewStates[currentTab];
-        const screenX = (targetMsg.x * vs.scale) + vs.panX;
-        const screenY = (targetMsg.y * vs.scale) + vs.panY;
+        const scale = vs.scale || 1.0;
+        const screenX = (targetMsg.x * scale) + vs.panX;
+        const screenY = (targetMsg.y * scale) + vs.panY;
         const centerX = cont.offsetWidth / 2;
         const centerY = cont.offsetHeight / 2;
         
@@ -1348,200 +1407,6 @@
         replyNav.onclick = () => jumpToUnreadMessage(targetMsg.id);
         
         arrowAnimId = requestAnimationFrame(updateReplyArrowDirection);
-    }
-
-    // ==========================================
-    // 完全に新しく作り直した Canvas 方式のミニマップ
-    // ==========================================
-    function startMinimapLoop() {
-        if (minimapAnimId) cancelAnimationFrame(minimapAnimId);
-        minimapAnimId = requestAnimationFrame(updateMinimapCanvas);
-    }
-
-    function updateMinimapCanvas() {
-        minimapAnimId = requestAnimationFrame(updateMinimapCanvas);
-        
-        const container = document.getElementById('canvas-minimap-container');
-        const canvas = document.getElementById('minimap-canvas');
-        if (!container || !canvas) return;
-
-        if (currentTab !== 'canvas' || !activeContactId) {
-            container.style.display = 'none';
-            return;
-        }
-        container.style.display = 'block';
-
-        // 解像度合わせ
-        if (canvas.width !== container.clientWidth) canvas.width = container.clientWidth;
-        if (canvas.height !== container.clientHeight) canvas.height = container.clientHeight;
-
-        const ctx = canvas.getContext('2d');
-        const cw = canvas.width;
-        const ch = canvas.height;
-        
-        ctx.clearRect(0, 0, cw, ch);
-
-        const nodes = appData.contacts[activeContactId].canvasNodes || [];
-        
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        let hasNodes = false;
-        nodes.forEach(n => {
-            if(typeof n.x === 'number' && typeof n.y === 'number') {
-                minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
-                maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
-                hasNodes = true;
-            }
-        });
-
-        const vs = viewStates['canvas'];
-        const ws = document.getElementById('canvas-workspace');
-        const vpW = ws.offsetWidth || window.innerWidth;
-        const vpH = ws.offsetHeight || window.innerHeight;
-        const vpX = -vs.panX;
-        const vpY = -vs.panY;
-
-        minX = Math.min(minX, vpX); minY = Math.min(minY, vpY);
-        maxX = Math.max(maxX, vpX + vpW); maxY = Math.max(maxY, vpY + vpH);
-
-        const now = Date.now();
-        Object.keys(userViewports).forEach(id => {
-            const vp = userViewports[id];
-            if (now - vp.time < 30000) {
-                minX = Math.min(minX, vp.x); minY = Math.min(minY, vp.y);
-                maxX = Math.max(maxX, vp.x); maxY = Math.max(maxY, vp.y);
-            }
-        });
-
-        // 枠の余白
-        minX -= 400; minY -= 400; maxX += 400; maxY += 400;
-
-        const w = Math.max(maxX - minX, 1);
-        const h = Math.max(maxY - minY, 1);
-
-        const scale = Math.min(cw / w, ch / h);
-        const ox = (cw - w * scale) / 2;
-        const oy = (ch - h * scale) / 2;
-
-        appData.minimapTransform = { scale, ox, oy, minX, minY };
-
-        // 線の描画
-        ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
-        ctx.lineWidth = 1;
-        nodes.forEach(n => {
-            if (n.parentId) {
-                const p = nodes.find(x => x.id === n.parentId);
-                if (p && typeof p.x === 'number') {
-                    const px = ox + (p.x - minX) * scale;
-                    const py = oy + (p.y - minY) * scale;
-                    const cx = ox + (n.x - minX) * scale;
-                    const cy = oy + (n.y - minY) * scale;
-                    ctx.beginPath();
-                    ctx.moveTo(px, py);
-                    ctx.lineTo(cx, cy);
-                    ctx.stroke();
-                }
-            }
-        });
-
-        // ノード点の描画
-        nodes.forEach(n => {
-            if (typeof n.x !== 'number') return;
-            const cx = ox + (n.x - minX) * scale;
-            const cy = oy + (n.y - minY) * scale;
-            const isUnread = unreadMessages.some(m => m.id === n.id && m.space === 'canvas');
-            
-            ctx.beginPath();
-            ctx.arc(cx, cy, isUnread ? 4 : 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = isUnread ? (unreadMessages.find(m => m.id===n.id).isReplyToMe ? '#ff3b30':'#4CAF50') : (n.isMine ? '#007aff' : getUserColor(n.senderId));
-            ctx.fill();
-        });
-
-        // 自分のビューポート
-        const vx = ox + (vpX - minX) * scale;
-        const vy = oy + (vpY - minY) * scale;
-        const vw = vpW * scale;
-        const vh = vpH * scale;
-
-        ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
-        ctx.fillRect(vx, vy, vw, vh);
-        ctx.strokeRect(vx, vy, vw, vh);
-        
-        // 他ユーザーのビューポート中心
-        Object.keys(userViewports).forEach(id => {
-            if (id === appData.myP2pId) return; 
-            const vp = userViewports[id];
-            if (now - vp.time < 30000) {
-                const cx = ox + (vp.x - minX) * scale;
-                const cy = oy + (vp.y - minY) * scale;
-                
-                ctx.beginPath();
-                ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-                ctx.fillStyle = getUserColor(id);
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-        });
-    }
-
-    function initMinimapEvents() {
-        const canvas = document.getElementById('minimap-canvas');
-        if (!canvas) return;
-
-        function handleMinimapInput(e) {
-            if (currentTab !== 'canvas' || !activeContactId) return;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-            
-            const tr = appData.minimapTransform;
-            if (!tr) return;
-
-            const worldX = (x - tr.ox) / tr.scale + tr.minX;
-            const worldY = (y - tr.oy) / tr.scale + tr.minY;
-
-            const ws = document.getElementById('canvas-workspace');
-            const vpW = ws.offsetWidth || window.innerWidth;
-            const vpH = ws.offsetHeight || window.innerHeight;
-
-            const vs = viewStates['canvas'];
-            vs.panX = -worldX + vpW / 2;
-            vs.panY = -worldY + vpH / 2;
-
-            updateWorkspaceTransform('canvas');
-            sendViewportUpdate();
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            minimapIsDragging = true;
-            handleMinimapInput(e);
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (minimapIsDragging) handleMinimapInput(e);
-        });
-        window.addEventListener('mouseup', () => {
-            minimapIsDragging = false;
-        });
-
-        canvas.addEventListener('touchstart', (e) => {
-            minimapIsDragging = true;
-            handleMinimapInput(e);
-        }, { passive: false });
-        window.addEventListener('touchmove', (e) => {
-            if (minimapIsDragging) {
-                e.preventDefault();
-                handleMinimapInput(e);
-            }
-        }, { passive: false });
-        window.addEventListener('touchend', () => {
-            minimapIsDragging = false;
-        });
     }
 
     // --- フォースレイアウト ---
@@ -1728,8 +1593,9 @@
     
     function handleNodePointerMove(e, space) {
         if (activeNodeDrag && activeNodeDrag.space === space) {
-            const dx = e.clientX - activeNodeDrag.startX;
-            const dy = e.clientY - activeNodeDrag.startY;
+            const scale = viewStates[space].scale || 1.0;
+            const dx = (e.clientX - activeNodeDrag.startX) / scale;
+            const dy = (e.clientY - activeNodeDrag.startY) / scale;
             activeNodeDrag.nodeObj.x = activeNodeDrag.initX + dx;
             activeNodeDrag.nodeObj.y = activeNodeDrag.initY + dy;
             
@@ -1912,7 +1778,6 @@
             if (!text && !file) return;
             if (!activeContactId) return alert('ルーム・相手を開いてください');
             
-            // --- 修正版: 文字なし・画像のみの場合のAI自動入力 ---
             if (!text && file) {
                 const btn = sourceSpace === 'canvas' ? document.querySelectorAll('.chat-action-btn')[1] : document.querySelectorAll('.chat-action-btn')[3];
                 const oldBtnHTML = btn.innerHTML;
@@ -1925,7 +1790,7 @@
                     const response = await fetch("https://api.openai.com/v1/chat/completions", {
                         method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appData.openAiKey}` },
                         body: JSON.stringify({
-                            model: "gpt-5.2", // ユーザー指定API
+                            model: "gpt-5.2", 
                             messages: [{
                                 role: "user",
                                 content: [
@@ -1949,7 +1814,7 @@
                     }
                 } catch(e) {
                     console.error("画像解析エラー:", e);
-                    text = "画像"; // フォールバック
+                    text = "画像"; 
                 } finally {
                     btn.innerHTML = oldBtnHTML;
                 }
@@ -2224,9 +2089,10 @@
 
             if (currentTab === space) {
                 const vs = viewStates[space];
+                const scale = vs.scale || 1.0;
                 const cont = document.getElementById(`${space}-workspace`);
-                const screenX = ((node.tempX !== undefined ? node.tempX : node.x) * vs.scale) + vs.panX;
-                const screenY = ((node.tempY !== undefined ? node.tempY : node.y) * vs.scale) + vs.panY;
+                const screenX = ((node.tempX !== undefined ? node.tempX : node.x) * scale) + vs.panX;
+                const screenY = ((node.tempY !== undefined ? node.tempY : node.y) * scale) + vs.panY;
                 
                 const margin = 50; 
                 if (screenX < -margin || screenX > cont.offsetWidth + margin || screenY < -margin || screenY > cont.offsetHeight + margin) {
