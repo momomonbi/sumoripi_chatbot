@@ -271,16 +271,26 @@
 </div>
 
 <div id="tab-solo" class="tab-content">
-    <div id="solo-messages">
-        <div class="solo-empty" id="solo-empty-state">
-            <div class="solo-empty-icon">🤖</div>
-            <div style="font-weight:900; color:var(--accent-color); margin-bottom:6px;">GPT-5.4 とソロでチャット</div>
-            <div style="font-size:0.85rem;">設定で OpenAI APIキー を入力してから話しかけてください。</div>
-            <div style="font-size:0.75rem; margin-top:8px; opacity:0.8;">🔍 ボタンで Web 検索の ON/OFF を切り替えられます。</div>
+    <div class="online-indicator" id="solo-status-indicator" style="pointer-events:auto;">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent-color); margin-bottom: 4px;">🤖 GPT-5.4 ソロ</div>
+        <div id="solo-status-text" style="font-size: 0.8rem; font-weight: bold;">準備OK</div>
+    </div>
+
+    <div id="solo-empty-overlay" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5; background:var(--card-bg); backdrop-filter:blur(10px); padding:20px 24px; border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,0.1); text-align:center; max-width:300px; border:1px solid rgba(128,128,128,0.2);">
+        <div style="font-size:3rem; margin-bottom:8px;">🤖</div>
+        <div style="font-weight:900; color:var(--accent-color); margin-bottom:6px;">GPT-5.4 とソロでチャット</div>
+        <div style="font-size:0.8rem; line-height:1.5;">設定で OpenAI APIキー を入力してから話しかけてください。<br>🔍 で Web 検索の ON/OFF を切り替え可能。</div>
+    </div>
+
+    <div class="workspace-container" id="solo-workspace">
+        <div class="workspace-bg" id="solo-bg"></div>
+        <div class="workspace-layer" id="solo-layer">
+            <svg id="solo-svg-layer" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:0; left:0; width:10000px; height:10000px; pointer-events:none; z-index:0;"></svg>
+            <div id="solo-nodes-container" style="position:absolute; top:0; left:0; width:10000px; height:10000px; z-index:10;"></div>
         </div>
     </div>
 
-    <div style="display:flex; gap:8px; align-items:center; padding:6px 10px; border-top:1px solid rgba(128,128,128,0.15); background:var(--header-bg); backdrop-filter:blur(10px);">
+    <div style="display:flex; gap:8px; align-items:center; padding:6px 10px; border-top:1px solid rgba(128,128,128,0.15); background:var(--header-bg); backdrop-filter:blur(10px); position:relative; z-index:1000;">
         <div id="solo-search-toggle" class="solo-search-toggle on" onclick="toggleSoloSearch()" title="Web検索のON/OFF">
             <span id="solo-search-icon">🔍</span>
             <span id="solo-search-label">Web検索: ON</span>
@@ -421,7 +431,8 @@
 
     const viewStates = {
         canvas: { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
-        tree:   { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
+        tree:   { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 },
+        solo:   { scale: 1.0, panX: -4000, panY: -4000, isDragging: false, startX: 0, startY: 0 }
     };
 
     function formatTime(ts) {
@@ -527,7 +538,10 @@
         document.getElementById('btn-export-canvas').style.display = (currentTab === 'canvas' && isConnected) ? 'block' : 'none';
 
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
-        if(currentTab === 'solo') renderSoloMessages();
+        if(currentTab === 'solo') {
+            renderSoloCanvas({ scrollToLatest: true });
+            setTimeout(() => renderSoloCanvas({ scrollToLatest: true }), 50);
+        }
         if(currentTab === 'solo' || currentTab === 'settings') {
             const cs = document.getElementById('canvas-summary-panel');
             const ts = document.getElementById('tree-summary-panel');
@@ -535,17 +549,20 @@
             if(ts) ts.style.display = 'none';
         }
         renderUnreadBadges();
-        
+
         const spacingSelect = document.getElementById('spacing-selector');
         const zoomCtrl = document.getElementById('zoom-controls-container');
-        
-        if (activeContactId) {
+
+        if (currentTab === 'solo') {
+            zoomCtrl.style.display = 'flex';
+            spacingSelect.style.display = 'none';
+        } else if (activeContactId) {
             if (currentTab === 'canvas' || currentTab === 'tree') {
                 zoomCtrl.style.display = 'flex';
             } else {
                 zoomCtrl.style.display = 'none';
             }
-            
+
             if (currentTab === 'canvas') {
                 spacingSelect.style.display = 'block';
                 spacingSelect.value = appData.contacts[activeContactId].nodeSpacing || 'normal';
@@ -556,7 +573,7 @@
             zoomCtrl.style.display = 'none';
             spacingSelect.style.display = 'none';
         }
-        
+
         if(currentTab === 'canvas') sendViewportUpdate();
     }
 
@@ -670,8 +687,8 @@
             document.getElementById('btn-clear-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-export-canvas').style.display = currentTab === 'canvas' ? 'block' : 'none';
             document.getElementById('btn-manage-tree').style.display = currentTab === 'tree' ? 'block' : 'none';
-            
-            if (currentTab === 'canvas' || currentTab === 'tree') {
+
+            if (currentTab === 'canvas' || currentTab === 'tree' || currentTab === 'solo') {
                 zoomCtrl.style.display = 'flex';
             } else {
                 zoomCtrl.style.display = 'none';
@@ -689,13 +706,14 @@
                 }
             }
         } else {
-            tabBtn.innerHTML = "🎨 キャンバス"; 
+            tabBtn.innerHTML = "🎨 キャンバス";
             tabBtn.classList.remove('connected', 'offline', 'room');
             document.getElementById('btn-clear-canvas').style.display = 'none';
             document.getElementById('btn-export-canvas').style.display = 'none';
             document.getElementById('btn-manage-tree').style.display = 'none';
             spacingSelect.style.display = 'none';
-            zoomCtrl.style.display = 'none';
+            if (currentTab === 'solo') zoomCtrl.style.display = 'flex';
+            else zoomCtrl.style.display = 'none';
             document.getElementById('canvas-summary-panel').style.display = 'none';
             document.getElementById('tree-summary-panel').style.display = 'none';
         }
@@ -1219,7 +1237,7 @@
 
     // --- ズームコントロール ---
     function handleZoom(direction) {
-        if (currentTab !== 'canvas' && currentTab !== 'tree') return;
+        if (currentTab !== 'canvas' && currentTab !== 'tree' && currentTab !== 'solo') return;
         const vs = viewStates[currentTab];
         const oldScale = vs.scale || 1.0;
         const zoomStep = 0.2;
@@ -1244,7 +1262,7 @@
 
     // --- ワークスペース ---
     function initWorkspaces() {
-        ['canvas', 'tree'].forEach(space => {
+        ['canvas', 'tree', 'solo'].forEach(space => {
             const cont = document.getElementById(`${space}-workspace`);
             
             document.addEventListener('pointerdown', (e) => {
@@ -1298,7 +1316,7 @@
     }
 
     function resetWorkspaceView() {
-        if (currentTab !== 'canvas' && currentTab !== 'tree') return;
+        if (currentTab !== 'canvas' && currentTab !== 'tree' && currentTab !== 'solo') return;
         const cont = document.getElementById(`${currentTab}-workspace`);
         const vs = viewStates[currentTab];
         vs.scale = 1.0;
@@ -2447,68 +2465,187 @@ ${texts.substring(0, 1500)}`;
         } catch(e) { console.error("AI解析エラー:", e); }
     }
 
-    function renderSoloMessages() {
-        const container = document.getElementById('solo-messages');
-        if (!container) return;
+    const SOLO_USER_X = 3700;
+    const SOLO_AI_X = 4080;
+    const SOLO_START_Y = 3900;
+    const SOLO_ROW_BASE = 130;
+
+    function renderSoloCanvas(opts) {
+        opts = opts || {};
+        const container = document.getElementById('solo-nodes-container');
+        const svg = document.getElementById('solo-svg-layer');
+        const empty = document.getElementById('solo-empty-overlay');
+        if (!container || !svg) return;
+        container.innerHTML = '';
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
         const msgs = appData.soloMessages || [];
 
-        if (msgs.length === 0) {
-            container.innerHTML = `
-                <div class="solo-empty" id="solo-empty-state">
-                    <div class="solo-empty-icon">🤖</div>
-                    <div style="font-weight:900; color:var(--accent-color); margin-bottom:6px;">GPT-5.4 とソロでチャット</div>
-                    <div style="font-size:0.85rem;">設定で OpenAI APIキー を入力してから話しかけてください。</div>
-                    <div style="font-size:0.75rem; margin-top:8px; opacity:0.8;">🔍 ボタンで Web 検索の ON/OFF を切り替えられます。</div>
-                </div>`;
-            return;
-        }
+        if (empty) empty.style.display = (msgs.length === 0 && !soloAwaitingReply) ? 'block' : 'none';
 
-        container.innerHTML = '';
-        msgs.forEach(m => {
-            const div = document.createElement('div');
-            div.className = 'solo-msg ' + (m.role === 'user' ? 'user' : 'ai');
-            const textEl = document.createElement('div');
-            textEl.textContent = m.content;
-            div.appendChild(textEl);
-
-            if (m.role === 'assistant' && Array.isArray(m.citations) && m.citations.length > 0) {
-                const cit = document.createElement('div');
-                cit.className = 'solo-citations';
-                const label = document.createElement('div');
-                label.className = 'solo-citation-label';
-                label.textContent = '🔎 参照したWebページ:';
-                cit.appendChild(label);
-                m.citations.forEach(c => {
-                    const a = document.createElement('a');
-                    a.href = c.url;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    a.textContent = c.title || c.url;
-                    cit.appendChild(a);
-                });
-                div.appendChild(cit);
-            }
-
-            if (m.timestamp) {
-                const meta = document.createElement('div');
-                meta.className = 'solo-msg-meta';
-                meta.textContent = formatTime(m.timestamp) + (m.searchUsed ? ' ・ 🔍 Web検索を利用' : '');
-                div.appendChild(meta);
-            }
-            container.appendChild(div);
+        const positions = [];
+        let y = SOLO_START_Y;
+        msgs.forEach((m, i) => {
+            const isUser = m.role === 'user';
+            const x = isUser ? SOLO_USER_X : SOLO_AI_X;
+            const textLen = (m.content || '').length;
+            const extra = Math.min(Math.floor(textLen / 60) * 22, 220);
+            positions.push({ x, y, msg: m, isUser });
+            y += SOLO_ROW_BASE + extra + ((m.citations && m.citations.length) ? 30 + m.citations.length * 16 : 0);
         });
 
         if (soloAwaitingReply) {
-            const typing = document.createElement('div');
-            typing.className = 'solo-msg typing';
-            typing.id = 'solo-typing-indicator';
-            const useSearch = appData.soloWebSearch !== false;
-            typing.innerHTML = (useSearch ? '<span style="font-size:0.8rem; margin-right:6px;">🔍 検索中...</span>' : '') +
-                '<span class="solo-typing-dots"><span></span><span></span><span></span></span>';
-            container.appendChild(typing);
+            positions.push({ x: SOLO_AI_X, y, msg: { role: 'assistant', content: '...', isTyping: true }, isUser: false, isTyping: true });
         }
 
-        container.scrollTop = container.scrollHeight;
+        for (let i = 1; i < positions.length; i++) {
+            const a = positions[i - 1], b = positions[i];
+            const ax = a.x + 130, ay = a.y + 30;
+            const bx = b.x + 130, by = b.y + 10;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const midY = (ay + by) / 2;
+            path.setAttribute('d', `M ${ax},${ay} C ${ax},${midY} ${bx},${midY} ${bx},${by}`);
+            path.setAttribute('stroke', b.isUser ? 'rgba(0,122,255,0.35)' : 'rgba(156,39,176,0.35)');
+            path.setAttribute('stroke-width', '2.5');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-dasharray', b.isTyping ? '6,4' : '0');
+            svg.appendChild(path);
+        }
+
+        positions.forEach(p => {
+            const node = document.createElement('div');
+            node.className = 'chat-node solo-canvas-node';
+            node.style.left = p.x + 'px';
+            node.style.top = p.y + 'px';
+            node.style.width = '260px';
+            node.style.maxWidth = '260px';
+            node.style.zIndex = '10';
+
+            if (p.isUser) {
+                node.style.background = 'linear-gradient(135deg, var(--accent-color), rgba(0,122,255,0.85))';
+                node.style.color = '#fff';
+                node.style.borderColor = 'rgba(255,255,255,0.4)';
+            } else {
+                node.style.borderColor = 'rgba(156,39,176,0.4)';
+            }
+
+            const header = document.createElement('div');
+            header.className = 'node-header';
+            header.style.cursor = 'default';
+            const iconWrap = document.createElement('div');
+            iconWrap.style.cssText = 'width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;';
+            if (p.isUser) {
+                iconWrap.style.background = 'rgba(255,255,255,0.25)';
+                if (appData.userIcon) {
+                    const img = document.createElement('img');
+                    img.src = appData.userIcon;
+                    img.className = 'node-icon';
+                    img.style.cssText = 'width:24px;height:24px;border-radius:50%;object-fit:cover;';
+                    iconWrap.innerHTML = '';
+                    iconWrap.appendChild(img);
+                } else {
+                    iconWrap.textContent = '🙂';
+                }
+            } else {
+                iconWrap.style.background = 'linear-gradient(135deg, #9c27b0, #ff4081)';
+                iconWrap.style.color = '#fff';
+                iconWrap.textContent = '🤖';
+            }
+            header.appendChild(iconWrap);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'font-weight:bold;font-size:0.8rem;flex-grow:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            nameSpan.textContent = p.isUser ? (appData.userName || 'あなた') : 'GPT-5.4';
+            if (p.isUser) nameSpan.style.color = '#fff';
+            header.appendChild(nameSpan);
+
+            if (p.msg.timestamp) {
+                const time = document.createElement('span');
+                time.className = 'node-time';
+                time.textContent = formatTime(p.msg.timestamp);
+                if (p.isUser) time.style.color = 'rgba(255,255,255,0.85)';
+                header.appendChild(time);
+            }
+            node.appendChild(header);
+
+            const body = document.createElement('div');
+            body.className = 'node-body';
+            body.style.cursor = 'default';
+
+            if (p.isTyping) {
+                const t = document.createElement('div');
+                t.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;';
+                const useSearch = appData.soloWebSearch !== false;
+                t.innerHTML = (useSearch ? '<span style="font-size:0.8rem;color:var(--accent-color);font-weight:bold;">🔍 検索中...</span>' : '<span style="font-size:0.8rem;opacity:0.7;font-weight:bold;">考え中...</span>') +
+                    '<span class="solo-typing-dots"><span></span><span></span><span></span></span>';
+                body.appendChild(t);
+            } else {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'node-text';
+                textDiv.style.cssText = 'font-size:0.92rem;white-space:pre-wrap;word-break:break-word;line-height:1.5;';
+                if (p.isUser) textDiv.style.color = '#fff';
+                textDiv.textContent = p.msg.content;
+                body.appendChild(textDiv);
+
+                if (!p.isUser && Array.isArray(p.msg.citations) && p.msg.citations.length > 0) {
+                    const cit = document.createElement('div');
+                    cit.className = 'solo-citations';
+                    const label = document.createElement('div');
+                    label.className = 'solo-citation-label';
+                    label.textContent = '🔎 参照したWebページ:';
+                    cit.appendChild(label);
+                    p.msg.citations.forEach(c => {
+                        const a = document.createElement('a');
+                        a.href = c.url;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.textContent = c.title || c.url;
+                        cit.appendChild(a);
+                    });
+                    body.appendChild(cit);
+                }
+
+                if (!p.isUser && p.msg.searchUsed) {
+                    const badge = document.createElement('div');
+                    badge.style.cssText = 'margin-top:6px;font-size:0.7rem;color:var(--accent-color);font-weight:bold;';
+                    badge.textContent = '🔍 Web検索を利用';
+                    body.appendChild(badge);
+                }
+            }
+            node.appendChild(body);
+            container.appendChild(node);
+        });
+
+        if (opts.scrollToLatest && positions.length > 0) {
+            const last = positions[positions.length - 1];
+            scrollSoloToPosition(last.x + 130, last.y + 60);
+        }
+    }
+
+    function scrollSoloToPosition(worldX, worldY) {
+        const cont = document.getElementById('solo-workspace');
+        if (!cont) return;
+        const vs = viewStates.solo;
+        const scale = vs.scale || 1.0;
+        vs.panX = cont.offsetWidth / 2 - worldX * scale;
+        vs.panY = cont.offsetHeight * 0.55 - worldY * scale;
+        updateWorkspaceTransform('solo');
+    }
+
+    function resetSoloView() {
+        const cont = document.getElementById('solo-workspace');
+        if (!cont) return;
+        const vs = viewStates.solo;
+        vs.scale = 1.0;
+        const msgs = appData.soloMessages || [];
+        if (msgs.length === 0) {
+            vs.panX = cont.offsetWidth / 2 - 4000;
+            vs.panY = cont.offsetHeight / 2 - 4000;
+        } else {
+            scrollSoloToPosition(SOLO_USER_X + 130, SOLO_START_Y + 60);
+            return;
+        }
+        updateWorkspaceTransform('solo');
     }
 
     function updateSoloSearchToggleUI() {
@@ -2531,7 +2668,7 @@ ${texts.substring(0, 1500)}`;
         updateSoloSearchToggleUI();
     }
 
-    function extractCitationsFromResponse(data) {
+    function extractCitationsFromResponses(data) {
         const citations = [];
         const seen = new Set();
         const pushUrl = (url, title) => {
@@ -2540,28 +2677,49 @@ ${texts.substring(0, 1500)}`;
             citations.push({ url, title: title || url });
         };
 
-        const msg = data.choices?.[0]?.message;
-        if (msg) {
-            if (Array.isArray(msg.annotations)) {
-                msg.annotations.forEach(a => {
-                    if (a.type === 'url_citation' && a.url_citation) {
-                        pushUrl(a.url_citation.url, a.url_citation.title);
-                    } else if (a.url) {
-                        pushUrl(a.url, a.title);
-                    }
-                });
-            }
-            if (Array.isArray(msg.tool_calls)) {
-                msg.tool_calls.forEach(tc => {
-                    const args = tc.function?.arguments;
-                    if (typeof args === 'string') {
-                        const matches = args.match(/https?:\/\/[^\s"'<>)]+/g);
-                        if (matches) matches.forEach(u => pushUrl(u));
-                    }
-                });
-            }
+        if (Array.isArray(data.output)) {
+            data.output.forEach(item => {
+                if (item.type === 'message' && Array.isArray(item.content)) {
+                    item.content.forEach(c => {
+                        if (Array.isArray(c.annotations)) {
+                            c.annotations.forEach(a => {
+                                if (a.type === 'url_citation') pushUrl(a.url, a.title);
+                            });
+                        }
+                    });
+                }
+            });
         }
         return citations;
+    }
+
+    function extractTextFromResponses(data) {
+        if (typeof data.output_text === 'string' && data.output_text.trim()) return data.output_text.trim();
+        const parts = [];
+        if (Array.isArray(data.output)) {
+            data.output.forEach(item => {
+                if (item.type === 'message' && Array.isArray(item.content)) {
+                    item.content.forEach(c => {
+                        if (c.type === 'output_text' && c.text) parts.push(c.text);
+                    });
+                }
+            });
+        }
+        return parts.join('\n').trim();
+    }
+
+    function hasWebSearchCall(data) {
+        if (!Array.isArray(data.output)) return false;
+        return data.output.some(item =>
+            item.type === 'web_search_call' ||
+            item.type === 'tool_call' ||
+            (item.type === 'function_call' && /search/i.test(item.name || ''))
+        );
+    }
+
+    function setSoloStatus(text) {
+        const el = document.getElementById('solo-status-text');
+        if (el) el.textContent = text || '準備OK';
     }
 
     async function sendSoloMessage() {
@@ -2581,12 +2739,13 @@ ${texts.substring(0, 1500)}`;
         inputEl.style.height = '44px';
         soloAwaitingReply = true;
         saveData();
-        renderSoloMessages();
+        renderSoloCanvas({ scrollToLatest: true });
 
         const sendBtn = document.getElementById('solo-send-btn');
         if (sendBtn) sendBtn.style.opacity = '0.5';
 
         const useSearch = appData.soloWebSearch !== false;
+        setSoloStatus(useSearch ? '🔍 Web検索中...' : '考え中...');
 
         try {
             const history = appData.soloMessages
@@ -2594,23 +2753,20 @@ ${texts.substring(0, 1500)}`;
                 .filter(m => m.role === 'user' || m.role === 'assistant')
                 .map(m => ({ role: m.role, content: m.content }));
 
-            const systemPrompt = useSearch
-                ? 'あなたはユーザーと日本語で気さくに会話する優しいAIアシスタントです。最新情報や事実確認が必要な質問には web_search ツールを使って調べてから回答してください。情報源のURLは回答の最後に箇条書きで明示してください。'
+            const instructions = useSearch
+                ? 'あなたはユーザーと日本語で気さくに会話する優しいAIアシスタントです。最新情報や事実確認が必要な質問には web_search ツールを使って調べてから回答してください。情報源のURLは回答の最後に明示してください。'
                 : 'あなたはユーザーと日本語で気さくに会話する優しいAIアシスタントです。簡潔で分かりやすく答えてください。';
 
             const body = {
                 model: 'gpt-5.4',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    ...history
-                ]
+                instructions,
+                input: history
             };
             if (useSearch) {
                 body.tools = [{ type: 'web_search_preview' }];
-                body.tool_choice = 'auto';
             }
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const response = await fetch('https://api.openai.com/v1/responses', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2621,17 +2777,17 @@ ${texts.substring(0, 1500)}`;
 
             if (!response.ok) {
                 const errText = await response.text().catch(() => '');
-                throw new Error(`API Error ${response.status}: ${errText.substring(0, 200)}`);
+                throw new Error(`API Error ${response.status}: ${errText.substring(0, 300)}`);
             }
 
             const data = await response.json();
-            const reply = data.choices?.[0]?.message?.content?.trim() || '(返信が取得できませんでした)';
-            const citations = extractCitationsFromResponse(data);
+            const reply = extractTextFromResponses(data) || '(返信が取得できませんでした)';
+            const citations = extractCitationsFromResponses(data);
             appData.soloMessages.push({
                 role: 'assistant',
                 content: reply,
                 timestamp: Date.now(),
-                searchUsed: useSearch && (citations.length > 0 || !!data.choices?.[0]?.message?.tool_calls),
+                searchUsed: useSearch && (citations.length > 0 || hasWebSearchCall(data)),
                 citations
             });
         } catch (e) {
@@ -2641,7 +2797,8 @@ ${texts.substring(0, 1500)}`;
             soloAwaitingReply = false;
             saveData();
             if (sendBtn) sendBtn.style.opacity = '1';
-            renderSoloMessages();
+            setSoloStatus('準備OK');
+            renderSoloCanvas({ scrollToLatest: true });
         }
     }
 
@@ -2650,7 +2807,8 @@ ${texts.substring(0, 1500)}`;
         if (!confirm('GPT-5.4 とのソロチャット履歴を全て消去しますか？')) return;
         appData.soloMessages = [];
         saveData();
-        renderSoloMessages();
+        renderSoloCanvas();
+        resetSoloView();
     }
 </script>
 
