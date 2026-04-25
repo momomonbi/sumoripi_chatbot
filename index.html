@@ -146,6 +146,15 @@
         .solo-citations a { font-size: 0.75rem; color: var(--accent-color); text-decoration: none; word-break: break-all; }
         .solo-citations a:hover { text-decoration: underline; }
         .solo-citation-label { font-size: 0.7rem; opacity: 0.7; font-weight: bold; }
+
+        .solo-md p { margin: 4px 0; }
+        .solo-md a { color: var(--accent-color); }
+        .solo-md ul, .solo-md ol { margin: 4px 0 4px 0; padding-left: 22px; }
+        .solo-md li { margin: 2px 0; }
+        .solo-md pre { max-width: 100%; }
+        .solo-md code { word-break: break-word; }
+        .solo-md strong { font-weight: 900; }
+        .solo-md h2, .solo-md h3, .solo-md h4 { color: var(--accent-color); }
     </style>
 </head>
 <body data-theme="default">
@@ -2525,6 +2534,92 @@ ${texts.substring(0, 1500)}`;
         } catch(e) { console.error("AI解析エラー:", e); }
     }
 
+    function _escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderMarkdown(text) {
+        if (!text) return '';
+        const codeBlocks = [];
+        let html = String(text);
+
+        html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+            const idx = codeBlocks.push({ lang, code: code.replace(/\n$/, '') }) - 1;
+            return ` CODEBLOCK${idx} `;
+        });
+
+        const inlineCodes = [];
+        html = html.replace(/`([^`\n]+)`/g, (_, c) => {
+            const idx = inlineCodes.push(c) - 1;
+            return ` INLINECODE${idx} `;
+        });
+
+        html = _escapeHtml(html);
+
+        html = html.replace(/^### (.+)$/gm, '<h4 style="margin:10px 0 4px 0; font-size:1rem; font-weight:900;">$1</h4>');
+        html = html.replace(/^## (.+)$/gm, '<h3 style="margin:12px 0 6px 0; font-size:1.05rem; font-weight:900;">$1</h3>');
+        html = html.replace(/^# (.+)$/gm, '<h2 style="margin:14px 0 8px 0; font-size:1.15rem; font-weight:900;">$1</h2>');
+
+        html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+
+        html = html.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+        html = html.replace(/(^|[^_\w])_([^_\n]+)_(?!_)/g, '$1<em>$2</em>');
+
+        html = html.replace(/~~([^~\n]+)~~/g, '<del>$1</del>');
+
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+            '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--accent-color); text-decoration:underline;">$1</a>');
+
+        html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g,
+            '$1<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--accent-color); text-decoration:underline; word-break:break-all;">$2</a>');
+
+        html = html.replace(/^&gt;\s?(.+)$/gm,
+            '<blockquote style="border-left:3px solid var(--accent-color); margin:6px 0; padding:4px 10px; opacity:0.85;">$1</blockquote>');
+
+        html = html.replace(/^[-*_]{3,}$/gm, '<hr style="border:none; border-top:1px dashed rgba(128,128,128,0.4); margin:10px 0;">');
+
+        const lines = html.split('\n');
+        const out = [];
+        let listType = null;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const ulMatch = line.match(/^\s*[-*]\s+(.+)$/);
+            const olMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+            if (ulMatch) {
+                if (listType !== 'ul') { if (listType) out.push(`</${listType}>`); out.push('<ul style="margin:6px 0; padding-left:22px;">'); listType = 'ul'; }
+                out.push(`<li>${ulMatch[1]}</li>`);
+            } else if (olMatch) {
+                if (listType !== 'ol') { if (listType) out.push(`</${listType}>`); out.push('<ol style="margin:6px 0; padding-left:22px;">'); listType = 'ol'; }
+                out.push(`<li>${olMatch[1]}</li>`);
+            } else {
+                if (listType) { out.push(`</${listType}>`); listType = null; }
+                out.push(line);
+            }
+        }
+        if (listType) out.push(`</${listType}>`);
+        html = out.join('\n');
+
+        html = html.replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+        html = html.replace(/<br>(\s*<(?:h[1-6]|ul|ol|li|pre|blockquote|hr)\b)/g, '$1');
+        html = html.replace(/(<\/(?:h[1-6]|ul|ol|li|pre|blockquote)>)<br>/g, '$1');
+
+        html = html.replace(/ INLINECODE(\d+) /g, (_, idx) =>
+            `<code style="background:rgba(0,0,0,0.08); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.9em;">${_escapeHtml(inlineCodes[+idx])}</code>`);
+
+        html = html.replace(/ CODEBLOCK(\d+) /g, (_, idx) => {
+            const b = codeBlocks[+idx];
+            return `<pre style="background:rgba(0,0,0,0.08); padding:10px; border-radius:8px; overflow-x:auto; font-family:monospace; font-size:0.82rem; margin:8px 0; white-space:pre;"><code>${_escapeHtml(b.code)}</code></pre>`;
+        });
+
+        return html;
+    }
+
     const SOLO_USER_X = 3700;
     const SOLO_AI_X = 4080;
     const SOLO_START_Y = 3900;
@@ -2641,10 +2736,15 @@ ${texts.substring(0, 1500)}`;
                 body.appendChild(t);
             } else {
                 const textDiv = document.createElement('div');
-                textDiv.className = 'node-text';
-                textDiv.style.cssText = 'font-size:0.92rem;white-space:pre-wrap;word-break:break-word;line-height:1.5;';
-                if (p.isUser) textDiv.style.color = '#fff';
-                textDiv.textContent = p.msg.content;
+                textDiv.className = 'node-text solo-md';
+                textDiv.style.cssText = 'font-size:0.92rem;word-break:break-word;line-height:1.5;';
+                if (p.isUser) {
+                    textDiv.style.color = '#fff';
+                    textDiv.style.whiteSpace = 'pre-wrap';
+                    textDiv.textContent = p.msg.content;
+                } else {
+                    textDiv.innerHTML = renderMarkdown(p.msg.content);
+                }
                 body.appendChild(textDiv);
 
                 if (!p.isUser && Array.isArray(p.msg.citations) && p.msg.citations.length > 0) {
