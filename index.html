@@ -1261,10 +1261,26 @@
     }
 
     // --- ワークスペース ---
+    const _spacePointers = { canvas: new Map(), tree: new Map(), solo: new Map() };
+    const _spacePinch = { canvas: null, tree: null, solo: null };
+
+    function _applyZoomAt(space, newScale, anchorX, anchorY) {
+        const vs = viewStates[space];
+        const oldScale = vs.scale || 1.0;
+        const clamped = Math.max(0.2, Math.min(3.0, newScale));
+        const worldX = (anchorX - vs.panX) / oldScale;
+        const worldY = (anchorY - vs.panY) / oldScale;
+        vs.scale = clamped;
+        vs.panX = anchorX - worldX * clamped;
+        vs.panY = anchorY - worldY * clamped;
+        updateWorkspaceTransform(space);
+        if (space === 'canvas') sendViewportUpdate();
+    }
+
     function initWorkspaces() {
         ['canvas', 'tree', 'solo'].forEach(space => {
             const cont = document.getElementById(`${space}-workspace`);
-            
+
             document.addEventListener('pointerdown', (e) => {
                 if(!e.target.closest('.chat-node')) {
                     document.querySelectorAll('.chat-node').forEach(el => el.classList.remove('move-mode'));
@@ -1274,7 +1290,30 @@
                 }
             });
 
+            cont.addEventListener('wheel', (e) => {
+                if (currentTab !== space) return;
+                e.preventDefault();
+                const rect = cont.getBoundingClientRect();
+                const ax = e.clientX - rect.left;
+                const ay = e.clientY - rect.top;
+                const factor = e.deltaY > 0 ? 0.9 : 1.1;
+                _applyZoomAt(space, (viewStates[space].scale || 1.0) * factor, ax, ay);
+            }, { passive: false });
+
             cont.onpointerdown = (e) => {
+                if (e.pointerType === 'touch') {
+                    _spacePointers[space].set(e.pointerId, { x: e.clientX, y: e.clientY });
+                    if (_spacePointers[space].size === 2) {
+                        viewStates[space].isDragging = false;
+                        const arr = Array.from(_spacePointers[space].values());
+                        _spacePinch[space] = {
+                            dist: Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y),
+                            cx: (arr[0].x + arr[1].x) / 2,
+                            cy: (arr[0].y + arr[1].y) / 2
+                        };
+                        return;
+                    }
+                }
                 if (e.target.closest('.chat-node') || e.target.closest('.tree-node-content') || e.target.closest('.tree-btn')) return;
                 viewStates[space].isDragging = true;
                 viewStates[space].startX = e.clientX - viewStates[space].panX;
@@ -1282,18 +1321,39 @@
                 cont.setPointerCapture(e.pointerId);
             };
             cont.onpointermove = (e) => {
+                if (e.pointerType === 'touch' && _spacePointers[space].has(e.pointerId)) {
+                    _spacePointers[space].set(e.pointerId, { x: e.clientX, y: e.clientY });
+                    if (_spacePointers[space].size === 2 && _spacePinch[space]) {
+                        const arr = Array.from(_spacePointers[space].values());
+                        const newDist = Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y);
+                        const newCx = (arr[0].x + arr[1].x) / 2;
+                        const newCy = (arr[0].y + arr[1].y) / 2;
+                        const rect = cont.getBoundingClientRect();
+                        const ratio = newDist / _spacePinch[space].dist;
+                        _applyZoomAt(space, (viewStates[space].scale || 1.0) * ratio, newCx - rect.left, newCy - rect.top);
+                        viewStates[space].panX += (newCx - _spacePinch[space].cx);
+                        viewStates[space].panY += (newCy - _spacePinch[space].cy);
+                        _spacePinch[space] = { dist: newDist, cx: newCx, cy: newCy };
+                        updateWorkspaceTransform(space);
+                        return;
+                    }
+                }
                 if (viewStates[space].isDragging) {
                     viewStates[space].panX = e.clientX - viewStates[space].startX;
                     viewStates[space].panY = e.clientY - viewStates[space].startY;
                     updateWorkspaceTransform(space);
                     if (space === 'canvas') sendViewportUpdate();
                 }
-                handleNodePointerMove(e, space); 
+                handleNodePointerMove(e, space);
             };
             const pointerUpHandler = (e) => {
+                if (e.pointerType === 'touch') {
+                    _spacePointers[space].delete(e.pointerId);
+                    if (_spacePointers[space].size < 2) _spacePinch[space] = null;
+                }
                 viewStates[space].isDragging = false;
-                cont.releasePointerCapture(e.pointerId);
-                handleNodePointerUp(e, space); 
+                try { cont.releasePointerCapture(e.pointerId); } catch (_) {}
+                handleNodePointerUp(e, space);
             };
             cont.onpointerup = pointerUpHandler; cont.onpointercancel = pointerUpHandler;
         });
@@ -2490,12 +2550,12 @@ ${texts.substring(0, 1500)}`;
             const x = isUser ? SOLO_USER_X : SOLO_AI_X;
             const textLen = (m.content || '').length;
             const extra = Math.min(Math.floor(textLen / 60) * 22, 220);
-            positions.push({ x, y, msg: m, isUser });
+            positions.push({ x, y, msg: m, isUser, msgIndex: i });
             y += SOLO_ROW_BASE + extra + ((m.citations && m.citations.length) ? 30 + m.citations.length * 16 : 0);
         });
 
         if (soloAwaitingReply) {
-            positions.push({ x: SOLO_AI_X, y, msg: { role: 'assistant', content: '...', isTyping: true }, isUser: false, isTyping: true });
+            positions.push({ x: SOLO_AI_X, y, msg: { role: 'assistant', content: '...', isTyping: true }, isUser: false, isTyping: true, msgIndex: -1 });
         }
 
         for (let i = 1; i < positions.length; i++) {
@@ -2613,6 +2673,18 @@ ${texts.substring(0, 1500)}`;
                 }
             }
             node.appendChild(body);
+
+            if (!p.isTyping) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'solo-del-btn';
+                delBtn.title = 'このメッセージを削除';
+                delBtn.textContent = '×';
+                delBtn.style.cssText = 'position:absolute; top:-10px; right:-10px; width:26px; height:26px; border-radius:50%; background:#f44336; color:#fff; border:2px solid var(--bg-color); font-weight:900; font-size:16px; cursor:pointer; line-height:1; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.25); padding:0; z-index:20;';
+                delBtn.onclick = (ev) => { ev.stopPropagation(); deleteSoloMessage(p.msgIndex); };
+                delBtn.onpointerdown = (ev) => { ev.stopPropagation(); };
+                node.appendChild(delBtn);
+            }
+
             container.appendChild(node);
         });
 
@@ -2809,6 +2881,17 @@ ${texts.substring(0, 1500)}`;
         saveData();
         renderSoloCanvas();
         resetSoloView();
+    }
+
+    function deleteSoloMessage(index) {
+        if (!Array.isArray(appData.soloMessages)) return;
+        if (index < 0 || index >= appData.soloMessages.length) return;
+        const msg = appData.soloMessages[index];
+        const label = msg.role === 'user' ? 'あなたの発言' : 'GPT-5.4の発言';
+        if (!confirm(`この${label}を削除しますか？\n\n「${(msg.content || '').substring(0, 50)}${msg.content && msg.content.length > 50 ? '…' : ''}」`)) return;
+        appData.soloMessages.splice(index, 1);
+        saveData();
+        renderSoloCanvas();
     }
 </script>
 
