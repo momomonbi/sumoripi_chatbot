@@ -122,6 +122,30 @@
         .contact-item button { padding:6px 12px; border-radius:8px; font-weight:bold; cursor: pointer; border:none; }
         
         #img-preview-full { max-width: 95vw; max-height: 90vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
+
+        /* ソロGPTモード */
+        #solo-messages { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+        .solo-msg { max-width: 80%; padding: 10px 14px; border-radius: 18px; line-height: 1.5; word-break: break-word; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.06); animation: solo-pop 0.25s ease-out; font-size: 0.95rem; }
+        @keyframes solo-pop { 0% { opacity: 0; transform: translateY(8px) scale(0.96); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        .solo-msg.user { align-self: flex-end; background: var(--accent-color); color: white; border-bottom-right-radius: 6px; }
+        .solo-msg.ai { align-self: flex-start; background: var(--card-bg); color: var(--text-color); border: 1px solid rgba(128,128,128,0.2); border-bottom-left-radius: 6px; backdrop-filter: blur(10px); }
+        .solo-msg.typing { align-self: flex-start; background: var(--card-bg); color: var(--text-color); border: 1px solid rgba(128,128,128,0.2); border-bottom-left-radius: 6px; opacity: 0.8; }
+        .solo-msg-meta { font-size: 0.7rem; opacity: 0.6; margin-top: 4px; }
+        .solo-empty { margin: auto; text-align: center; opacity: 0.6; padding: 20px; }
+        .solo-empty .solo-empty-icon { font-size: 3rem; margin-bottom: 10px; }
+        .solo-typing-dots span { display: inline-block; width: 8px; height: 8px; margin: 0 2px; background: var(--accent-color); border-radius: 50%; animation: solo-blink 1.2s infinite ease-in-out; }
+        .solo-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .solo-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes solo-blink { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+        .solo-search-toggle { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 18px; background: rgba(128,128,128,0.15); color: var(--text-color); font-size: 0.8rem; font-weight: bold; cursor: pointer; user-select: none; transition: background 0.2s, color 0.2s; }
+        .solo-search-toggle.on { background: var(--accent-color); color: white; }
+        .solo-search-status { display: none; align-self: flex-start; padding: 6px 12px; border-radius: 14px; background: rgba(0,122,255,0.12); color: var(--accent-color); font-size: 0.8rem; font-weight: bold; }
+        .solo-search-status.show { display: inline-block; }
+        .solo-citations { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,0.3); display: flex; flex-direction: column; gap: 4px; }
+        .solo-citations a { font-size: 0.75rem; color: var(--accent-color); text-decoration: none; word-break: break-all; }
+        .solo-citations a:hover { text-decoration: underline; }
+        .solo-citation-label { font-size: 0.7rem; opacity: 0.7; font-weight: bold; }
     </style>
 </head>
 <body data-theme="default">
@@ -147,6 +171,7 @@
         <div class="tab-highlight" id="tab-highlight"></div>
         <div class="tab active" id="tab-btn-canvas" onclick="handleCanvasTabClick(this)">🎨 キャンバス</div>
         <div class="tab" id="tab-btn-tree" onclick="switchTab('tab-tree', this)">🌳 ツリー</div>
+        <div class="tab" id="tab-btn-solo" onclick="switchTab('tab-solo', this)">🤖 ソロGPT</div>
         <div class="tab" id="tab-btn-settings" onclick="switchTab('tab-settings', this)">⚙️ 設定</div>
     </div>
 </div>
@@ -240,6 +265,33 @@
         <button class="chat-action-btn" onclick="document.getElementById('file-input-tree').click()" style="background:rgba(128,128,128,0.15); color:var(--text-color);">📷</button>
         <textarea id="tree-input-text" class="chat-input" placeholder="自動でツリーに配置されます..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, () => sendMessage('tree'))"></textarea>
         <button class="chat-action-btn" onclick="sendMessage('tree')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
+</div>
+
+<div id="tab-solo" class="tab-content">
+    <div id="solo-messages">
+        <div class="solo-empty" id="solo-empty-state">
+            <div class="solo-empty-icon">🤖</div>
+            <div style="font-weight:900; color:var(--accent-color); margin-bottom:6px;">GPT-5.4 とソロでチャット</div>
+            <div style="font-size:0.85rem;">設定で OpenAI APIキー を入力してから話しかけてください。</div>
+            <div style="font-size:0.75rem; margin-top:8px; opacity:0.8;">🔍 ボタンで Web 検索の ON/OFF を切り替えられます。</div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center; padding:6px 10px; border-top:1px solid rgba(128,128,128,0.15); background:var(--header-bg); backdrop-filter:blur(10px);">
+        <div id="solo-search-toggle" class="solo-search-toggle on" onclick="toggleSoloSearch()" title="Web検索のON/OFF">
+            <span id="solo-search-icon">🔍</span>
+            <span id="solo-search-label">Web検索: ON</span>
+        </div>
+        <div style="font-size:0.7rem; opacity:0.6; flex-grow:1; text-align:right;">model: gpt-5.4</div>
+    </div>
+
+    <div class="chat-controls-bar">
+        <button class="chat-action-btn" onclick="clearSoloChat()" title="履歴を消去" style="background:rgba(244,67,54,0.15); color:#f44336;">🗑️</button>
+        <textarea id="solo-input-text" class="chat-input" placeholder="GPT-5.4 にメッセージを送る..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event, sendSoloMessage)"></textarea>
+        <button class="chat-action-btn" id="solo-send-btn" onclick="sendSoloMessage()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
     </div>
@@ -340,11 +392,13 @@
     const STORE_NAME = 'appState';
     const DB_VERSION = 1;
 
-    let appData = { 
+    let appData = {
         theme: 'default', userName: 'ゲスト', userIcon: '', openAiKey: '',
         bgImage: '', bgOpacity: 0.2,
-        myP2pId: '', contacts: {}
+        myP2pId: '', contacts: {},
+        soloMessages: [], soloWebSearch: true
     };
+    let soloAwaitingReply = false;
     
     let activeConnections = {}; 
     let activeContactId = null; 
@@ -428,7 +482,10 @@
 
     function initializeApp() {
         if (!appData.myP2pId) { appData.myP2pId = Math.floor(1000 + Math.random() * 9000).toString(); saveData(); }
-        if (!appData.contacts) appData.contacts = {}; 
+        if (!appData.contacts) appData.contacts = {};
+        if (!Array.isArray(appData.soloMessages)) appData.soloMessages = [];
+        if (typeof appData.soloWebSearch !== 'boolean') appData.soloWebSearch = true;
+        updateSoloSearchToggleUI();
 
         document.getElementById('setting-username').value = appData.userName;
         document.getElementById('setting-openai-key').value = appData.openAiKey || '';
@@ -463,13 +520,20 @@
         }, 30);
 
         currentTab = id.replace('tab-', '');
-        
+
         const isConnected = !!activeContactId;
         document.getElementById('btn-clear-canvas').style.display = (currentTab === 'canvas' && isConnected) ? 'block' : 'none';
         document.getElementById('btn-manage-tree').style.display = (currentTab === 'tree' && isConnected) ? 'block' : 'none';
         document.getElementById('btn-export-canvas').style.display = (currentTab === 'canvas' && isConnected) ? 'block' : 'none';
-        
+
         if(currentTab === 'canvas' || currentTab === 'tree') renderWorkspace(currentTab);
+        if(currentTab === 'solo') renderSoloMessages();
+        if(currentTab === 'solo' || currentTab === 'settings') {
+            const cs = document.getElementById('canvas-summary-panel');
+            const ts = document.getElementById('tree-summary-panel');
+            if(cs) cs.style.display = 'none';
+            if(ts) ts.style.display = 'none';
+        }
         renderUnreadBadges();
         
         const spacingSelect = document.getElementById('spacing-selector');
@@ -2381,6 +2445,212 @@ ${texts.substring(0, 1500)}`;
             refreshTreeSummaryAI(targetContextId, rId);
 
         } catch(e) { console.error("AI解析エラー:", e); }
+    }
+
+    function renderSoloMessages() {
+        const container = document.getElementById('solo-messages');
+        if (!container) return;
+        const msgs = appData.soloMessages || [];
+
+        if (msgs.length === 0) {
+            container.innerHTML = `
+                <div class="solo-empty" id="solo-empty-state">
+                    <div class="solo-empty-icon">🤖</div>
+                    <div style="font-weight:900; color:var(--accent-color); margin-bottom:6px;">GPT-5.4 とソロでチャット</div>
+                    <div style="font-size:0.85rem;">設定で OpenAI APIキー を入力してから話しかけてください。</div>
+                    <div style="font-size:0.75rem; margin-top:8px; opacity:0.8;">🔍 ボタンで Web 検索の ON/OFF を切り替えられます。</div>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        msgs.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'solo-msg ' + (m.role === 'user' ? 'user' : 'ai');
+            const textEl = document.createElement('div');
+            textEl.textContent = m.content;
+            div.appendChild(textEl);
+
+            if (m.role === 'assistant' && Array.isArray(m.citations) && m.citations.length > 0) {
+                const cit = document.createElement('div');
+                cit.className = 'solo-citations';
+                const label = document.createElement('div');
+                label.className = 'solo-citation-label';
+                label.textContent = '🔎 参照したWebページ:';
+                cit.appendChild(label);
+                m.citations.forEach(c => {
+                    const a = document.createElement('a');
+                    a.href = c.url;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.textContent = c.title || c.url;
+                    cit.appendChild(a);
+                });
+                div.appendChild(cit);
+            }
+
+            if (m.timestamp) {
+                const meta = document.createElement('div');
+                meta.className = 'solo-msg-meta';
+                meta.textContent = formatTime(m.timestamp) + (m.searchUsed ? ' ・ 🔍 Web検索を利用' : '');
+                div.appendChild(meta);
+            }
+            container.appendChild(div);
+        });
+
+        if (soloAwaitingReply) {
+            const typing = document.createElement('div');
+            typing.className = 'solo-msg typing';
+            typing.id = 'solo-typing-indicator';
+            const useSearch = appData.soloWebSearch !== false;
+            typing.innerHTML = (useSearch ? '<span style="font-size:0.8rem; margin-right:6px;">🔍 検索中...</span>' : '') +
+                '<span class="solo-typing-dots"><span></span><span></span><span></span></span>';
+            container.appendChild(typing);
+        }
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function updateSoloSearchToggleUI() {
+        const toggle = document.getElementById('solo-search-toggle');
+        const label = document.getElementById('solo-search-label');
+        if (!toggle || !label) return;
+        const on = appData.soloWebSearch !== false;
+        if (on) {
+            toggle.classList.add('on');
+            label.textContent = 'Web検索: ON';
+        } else {
+            toggle.classList.remove('on');
+            label.textContent = 'Web検索: OFF';
+        }
+    }
+
+    function toggleSoloSearch() {
+        appData.soloWebSearch = !(appData.soloWebSearch !== false);
+        saveData();
+        updateSoloSearchToggleUI();
+    }
+
+    function extractCitationsFromResponse(data) {
+        const citations = [];
+        const seen = new Set();
+        const pushUrl = (url, title) => {
+            if (!url || seen.has(url)) return;
+            seen.add(url);
+            citations.push({ url, title: title || url });
+        };
+
+        const msg = data.choices?.[0]?.message;
+        if (msg) {
+            if (Array.isArray(msg.annotations)) {
+                msg.annotations.forEach(a => {
+                    if (a.type === 'url_citation' && a.url_citation) {
+                        pushUrl(a.url_citation.url, a.url_citation.title);
+                    } else if (a.url) {
+                        pushUrl(a.url, a.title);
+                    }
+                });
+            }
+            if (Array.isArray(msg.tool_calls)) {
+                msg.tool_calls.forEach(tc => {
+                    const args = tc.function?.arguments;
+                    if (typeof args === 'string') {
+                        const matches = args.match(/https?:\/\/[^\s"'<>)]+/g);
+                        if (matches) matches.forEach(u => pushUrl(u));
+                    }
+                });
+            }
+        }
+        return citations;
+    }
+
+    async function sendSoloMessage() {
+        if (soloAwaitingReply) return;
+        const inputEl = document.getElementById('solo-input-text');
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        if (!appData.openAiKey) {
+            alert('設定で OpenAI APIキー を入力してください。');
+            return;
+        }
+
+        if (!Array.isArray(appData.soloMessages)) appData.soloMessages = [];
+        appData.soloMessages.push({ role: 'user', content: text, timestamp: Date.now() });
+        inputEl.value = '';
+        inputEl.style.height = '44px';
+        soloAwaitingReply = true;
+        saveData();
+        renderSoloMessages();
+
+        const sendBtn = document.getElementById('solo-send-btn');
+        if (sendBtn) sendBtn.style.opacity = '0.5';
+
+        const useSearch = appData.soloWebSearch !== false;
+
+        try {
+            const history = appData.soloMessages
+                .slice(-30)
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .map(m => ({ role: m.role, content: m.content }));
+
+            const systemPrompt = useSearch
+                ? 'あなたはユーザーと日本語で気さくに会話する優しいAIアシスタントです。最新情報や事実確認が必要な質問には web_search ツールを使って調べてから回答してください。情報源のURLは回答の最後に箇条書きで明示してください。'
+                : 'あなたはユーザーと日本語で気さくに会話する優しいAIアシスタントです。簡潔で分かりやすく答えてください。';
+
+            const body = {
+                model: 'gpt-5.4',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...history
+                ]
+            };
+            if (useSearch) {
+                body.tools = [{ type: 'web_search_preview' }];
+                body.tool_choice = 'auto';
+            }
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${appData.openAiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const errText = await response.text().catch(() => '');
+                throw new Error(`API Error ${response.status}: ${errText.substring(0, 200)}`);
+            }
+
+            const data = await response.json();
+            const reply = data.choices?.[0]?.message?.content?.trim() || '(返信が取得できませんでした)';
+            const citations = extractCitationsFromResponse(data);
+            appData.soloMessages.push({
+                role: 'assistant',
+                content: reply,
+                timestamp: Date.now(),
+                searchUsed: useSearch && (citations.length > 0 || !!data.choices?.[0]?.message?.tool_calls),
+                citations
+            });
+        } catch (e) {
+            console.error('Solo GPT エラー:', e);
+            appData.soloMessages.push({ role: 'assistant', content: '⚠️ エラー: ' + e.message, timestamp: Date.now() });
+        } finally {
+            soloAwaitingReply = false;
+            saveData();
+            if (sendBtn) sendBtn.style.opacity = '1';
+            renderSoloMessages();
+        }
+    }
+
+    function clearSoloChat() {
+        if (!appData.soloMessages || appData.soloMessages.length === 0) return;
+        if (!confirm('GPT-5.4 とのソロチャット履歴を全て消去しますか？')) return;
+        appData.soloMessages = [];
+        saveData();
+        renderSoloMessages();
     }
 </script>
 
